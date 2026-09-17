@@ -12,6 +12,7 @@
  * (instead of the top-level `extraResources`) means cross-OS builds don't
  * fail looking for Swift binaries that were never compiled.
  */
+const { execFileSync } = require("child_process")
 const fs = require("fs")
 const path = require("path")
 
@@ -50,6 +51,16 @@ const UNUSED_QVAC_ADDONS = [
  *    `files` negations do not reach those copies, and the top-level copy
  *    from `extraResources` is the one Node resolution finds once the nested
  *    one is gone.
+ * 4. On macOS, give the whole bundle a stable ad-hoc signature (last, since
+ *    it seals the bundle contents). Without a
+ *    signing identity electron-builder skips signing and the app runs on
+ *    Electron's stock binary, which is only "linker-signed": macOS
+ *    identifies it as "Electron" with a hash shared by every Electron app
+ *    of the same version and treats that identity as ephemeral, so
+ *    Accessibility grants do not stick and the app keeps asking. A stable
+ *    ad-hoc signature (`codesign --sign -`) gives it its own identifier,
+ *    `com.opennib.desktop`. electron-builder signs AFTER this hook, so a
+ *    Developer ID, once configured, simply overrides it.
  * 3. Delete every `prebuilds/<target>` directory whose target is not the
  *    one being built. Same rule as `@qvac/sdk/electron-forge`: keep entries
  *    whose name starts with `<platform>-<arch>` (the prefix match also keeps
@@ -103,6 +114,17 @@ async function finalizeBundle(context) {
   }
   walk(nodeModules)
   console.log(`  • pruned ${removed} prebuild dirs not matching ${keepPrefix}`)
+
+  // Must run LAST: the signature seals the bundle's contents, so any file
+  // removed after signing invalidates it.
+  if (platform === "darwin") {
+    const appBundle = path.join(
+      context.appOutDir,
+      `${context.packager.appInfo.productFilename}.app`,
+    )
+    execFileSync("codesign", ["--force", "--deep", "--sign", "-", appBundle], { stdio: "inherit" })
+    console.log("  • ad-hoc signed the app bundle (stable identity for macOS privacy grants)")
+  }
 }
 
 module.exports = {

@@ -159,7 +159,8 @@ architecture. Untrimmed, the app directory is several gigabytes.
   on GNOME/KDE Wayland the hotkey may silently never fire.
 - **No first-run check for `wtype` / `xdotool`.** Missing them surfaces as a
   spawn error rather than a helpful message.
-- **Builds are unsigned** on every platform. One visible consequence on
+- **Builds carry no Developer ID** on any platform; macOS builds get a
+  stable ad-hoc signature so privacy grants persist. One visible consequence on
   macOS: the paste helper is a separate binary that macOS does not attribute
   to the app, so it gets its **own** Accessibility entry. The first paste
   triggers the system prompt for it; if you decline or remove that entry,
