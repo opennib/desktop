@@ -132,7 +132,8 @@ Builds the helpers, runs `electron-vite build`, then invokes
 `electron-builder` to produce an **unsigned** `.dmg` and `.zip` for the
 host's architecture under `release/<version>/`. Unsigned means macOS
 Gatekeeper will complain on first launch. Code signing and notarisation land
-with v1.0.
+with v1.0. The app icon is `build/icon.png` (1024 px, the brand glyph on the
+ink tile); electron-builder derives the `.icns` and `.ico` from it.
 
 One build per architecture, on a matching host: the Bare runtime binary the
 core worker runs on comes from a platform-specific optional dependency
