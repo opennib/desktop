@@ -1,0 +1,1291 @@
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/newsreader-400-italic.woff2") format("woff2");
+}
+
+/* opennib v0.8 — onboarding flow (780×580, 7 steps)
+ *
+ * Layered on top of styles.css so paper/ink tokens (--ink, --paper, --card,
+ * --rec, --hair, --hair-2) stay shared with the main shell. Layout per
+ * `docs/design-references/design_handoff_opennib_desktop/sources/desktop-onboarding.jsx`.
+ *
+ * Window: macOS hiddenInset. Internal layout uses padding 40/56/24 with a
+ * single content column; per-step panes either fill the column (welcome,
+ * try, done) or split into a two-column row (acc, mic).
+ */
+
+.onboarding-body {
+  background: var(--card);
+  overflow: hidden;
+}
+
+.ob-shell {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  background: var(--card);
+  overflow: hidden;
+}
+
+/* macOS hiddenInset titlebar — invisible drag region across the very top so
+ * the user can move the window without a visible header. The traffic lights
+ * float over it in their default position. */
+.ob-titlebar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  -webkit-app-region: drag;
+  z-index: 1;
+}
+
+.ob-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 40px 56px 24px;
+}
+
+/* ─── Step pips (full-width bars) ─────────────────────────────────── */
+
+.ob-pips {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+}
+
+.ob-pip {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--paper-2);
+  transition: background 0.2s ease;
+}
+
+.ob-pip.is-done,
+.ob-pip.is-active {
+  background: var(--ink);
+}
+
+/* ─── Stage ───────────────────────────────────────────────────────── */
+
+.ob-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.ob-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.ob-pane[hidden] {
+  display: none;
+}
+
+/* Shared text typography */
+
+.ob-step-label {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.ob-step-label-center {
+  text-align: center;
+}
+
+.ob-h {
+  margin: 8px 0 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.7px;
+  line-height: 1.15;
+}
+
+.ob-h-center {
+  text-align: center;
+  margin-top: 4px;
+}
+
+.ob-h-large {
+  font-size: 30px;
+}
+
+.ob-p {
+  margin: 14px 0 0;
+  font-size: 15px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+.ob-p-center {
+  text-align: center;
+  max-width: none;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.ob-p-wide {
+  max-width: 440px;
+  margin: 12px auto 0;
+}
+
+.ob-callout {
+  margin-top: 18px;
+  padding: 12px 14px;
+  background: var(--paper-2);
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.ob-pillstatus {
+  margin-top: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  border: 0.5px solid var(--hair);
+  font-size: 12.5px;
+  color: var(--ink-2);
+  letter-spacing: -0.05px;
+  align-self: flex-start;
+}
+
+.ob-pill-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-4);
+  flex-shrink: 0;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ob-pillstatus[data-state="granted"] .ob-pill-dot {
+  background: #1f9d57;
+  box-shadow: 0 0 0 3px rgba(31, 157, 87, 0.14);
+}
+
+.ob-pillstatus[data-state="denied"] .ob-pill-dot {
+  background: var(--danger);
+  box-shadow: 0 0 0 3px rgba(193, 69, 69, 0.12);
+}
+
+.ob-pillstatus[data-state="granted"],
+.ob-pillstatus[data-state="denied"] {
+  color: var(--ink);
+}
+
+/* Two-column rows used by acc (step 2) and mic (step 3) */
+
+.ob-two-col {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 48px;
+}
+
+.ob-text-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.ob-side-col {
+  flex-shrink: 0;
+}
+
+/* ─── Step 1 · Welcome ────────────────────────────────────────────── */
+
+.ob-welcome-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 60px;
+  padding: 0 40px;
+}
+
+.ob-welcome-mark {
+  width: 140px;
+  height: 140px;
+  border-radius: 32px;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 16px 40px rgba(20, 22, 28, 0.25);
+}
+
+.ob-welcome-copy {
+  max-width: 320px;
+}
+
+.ob-welcome-wordmark {
+  font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 46px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.ob-welcome-version {
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+
+.ob-welcome-lead {
+  margin: 22px 0 0;
+  font-size: 17px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  letter-spacing: -0.2px;
+}
+
+.ob-welcome-bullets {
+  list-style: none;
+  margin: 18px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ob-welcome-bullets li {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+
+.ob-welcome-bullets b {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ob-bullet-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--rec);
+  flex-shrink: 0;
+  position: relative;
+  top: 6px;
+}
+
+/* ─── Step 2 · Accessibility prefs mock ───────────────────────────── */
+
+.ob-prefmock {
+  width: 320px;
+  height: 240px;
+  background: #f6f6f6;
+  border-radius: 10px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15), 0 0 0 0.5px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  font-family: -apple-system, system-ui, sans-serif;
+}
+
+.ob-prefmock-titlebar {
+  height: 26px;
+  background: linear-gradient(180deg, #ececec, #e3e3e3);
+  border-bottom: 0.5px solid rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  gap: 6px;
+}
+
+.ob-prefmock-light {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.ob-prefmock-title {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: rgba(0, 0, 0, 0.5);
+}
+
+.ob-prefmock-body {
+  padding: 10px 12px;
+}
+
+.ob-prefmock-section {
+  font-size: 12px;
+  font-weight: 600;
+  color: #000;
+  margin-bottom: 8px;
+}
+
+.ob-prefmock-row {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 5px;
+  background: transparent;
+  border: 0.5px solid transparent;
+}
+
+.ob-prefmock-row.is-highlight {
+  background: rgba(214, 74, 44, 0.1);
+  border-color: rgba(214, 74, 44, 0.4);
+}
+
+.ob-prefmock-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  background: #ccc;
+  margin-right: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ob-prefmock-icon.is-app {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ob-prefmock-name {
+  flex: 1;
+  font-size: 12px;
+  color: #000;
+}
+
+.ob-prefmock-toggle {
+  width: 30px;
+  height: 16px;
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.2);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ob-prefmock-toggle.is-on {
+  background: #34c759;
+}
+
+.ob-prefmock-knob {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.15s ease;
+}
+
+.ob-prefmock-toggle.is-on .ob-prefmock-knob {
+  left: 15px;
+}
+
+/* ─── Step 3 · Microphone halo ────────────────────────────────────── */
+
+.ob-mic-halo {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--paper-2) 0%, transparent 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.ob-mic-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 0.5px solid var(--hair);
+  pointer-events: none;
+}
+
+.ob-mic-ring[data-ring="1"] {
+  width: 270px;
+  height: 270px;
+  opacity: 0.4;
+}
+
+.ob-mic-ring[data-ring="2"] {
+  width: 320px;
+  height: 320px;
+  opacity: 0.25;
+}
+
+.ob-micbtn {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 28px rgba(20, 22, 28, 0.25);
+}
+
+.ob-inputchip {
+  margin-top: 18px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--paper-2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.ob-inputchip-name {
+  flex: 1;
+}
+
+.ob-inputchip-rate {
+  color: var(--ink-3);
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+}
+
+.ob-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.ob-chip.ink {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ob-chip.rec {
+  background: var(--rec-soft);
+  color: var(--rec);
+}
+
+/* ─── Step 4 · Model picker ───────────────────────────────────────── */
+
+.ob-list-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin-top: 16px;
+}
+
+.ob-list-wrap-tight {
+  margin-top: 12px;
+}
+
+.ob-list-fade {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: linear-gradient(to bottom, transparent, var(--card) 90%);
+  pointer-events: none;
+}
+
+.ob-model-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  height: 100%;
+  padding-bottom: 18px;
+}
+
+.ob-model-row {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--paper-2);
+  border: 0.5px solid var(--hair);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.ob-model-row:hover {
+  background: var(--paper);
+}
+
+.ob-model-row.is-selected {
+  background: #fff;
+  border-color: var(--ink);
+  /* box-shadow stand-in for a thicker border — keeps the row's outer size
+     identical to siblings so the list doesn't jiggle when you click between
+     models. */
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.ob-model-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1.2px solid var(--ink-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ob-model-row.is-selected .ob-model-radio {
+  background: var(--ink);
+  border: none;
+}
+
+.ob-model-radio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper);
+  display: none;
+}
+
+.ob-model-row.is-selected .ob-model-radio-dot {
+  display: block;
+}
+
+.ob-model-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.ob-model-title {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.ob-model-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.1px;
+}
+
+.ob-model-desc {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.ob-model-meter {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.ob-meter-block {
+  text-align: right;
+}
+
+.ob-meter-label {
+  font-size: 9px;
+  color: var(--ink-3);
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.ob-meter-bars {
+  display: inline-flex;
+  gap: 2px;
+}
+
+.ob-meter-bar {
+  width: 5px;
+  height: 9px;
+  border-radius: 1px;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.ob-meter-bar.is-on {
+  background: var(--ink-2);
+}
+
+.ob-meter-bar.is-on-rec {
+  background: var(--rec);
+}
+
+.ob-model-size {
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: 0.4px;
+  min-width: 50px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ob-model-installed {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: #1f9d57;
+}
+
+.ob-modelfoot {
+  margin-top: 10px;
+  padding: 9px 14px;
+  background: var(--paper-2);
+  border-radius: 10px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.ob-modelfoot-text {
+  flex: 1;
+}
+
+.ob-modelfoot-size {
+  color: var(--ink-3);
+  letter-spacing: 0.4px;
+}
+
+/* ─── Step 5 · Language grid ──────────────────────────────────────── */
+
+.ob-lang-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  overflow: auto;
+  height: 100%;
+  padding-bottom: 18px;
+}
+
+.ob-lang-row {
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: var(--paper-2);
+  border: 0.5px solid var(--hair);
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.ob-lang-row:hover {
+  background: var(--paper);
+}
+
+.ob-lang-row.is-selected {
+  background: #fff;
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.ob-lang-code {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  padding: 2px 0;
+  border-radius: 3px;
+  min-width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.ob-lang-row.is-selected .ob-lang-code {
+  color: var(--rec);
+  background: var(--rec-soft);
+  padding: 2px 5px;
+}
+
+.ob-lang-body {
+  min-width: 0;
+  flex: 1;
+}
+
+.ob-lang-name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ob-lang-native {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ob-autodetect {
+  margin-top: 12px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: var(--paper-2);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.ob-autodetect-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--ink-2);
+}
+
+.ob-autodetect-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.ob-autodetect-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.ob-autodetect-sub {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+
+/* iOS-style switch */
+
+.ob-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 11px;
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  outline: none;
+}
+
+.ob-switch:focus-visible {
+  box-shadow: 0 0 0 3px var(--rec-soft);
+}
+
+.ob-switch[aria-checked="true"] {
+  background: #34c759;
+}
+
+.ob-switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: left 0.15s ease;
+}
+
+.ob-switch[aria-checked="true"] .ob-switch-knob {
+  left: 18px;
+}
+
+/* ─── Step 6 · Try it out ─────────────────────────────────────────── */
+
+.ob-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 9px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 5px;
+  background: #fff;
+  border: 0.5px solid var(--hair);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ob-kbd-inline {
+  padding: 1px 8px;
+  background: var(--paper-2);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ob-hotkeycard {
+  margin-top: 22px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 0.5px solid var(--hair);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.ob-hotkeycard-text {
+  flex: 1;
+}
+
+.ob-hotkeycard-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+}
+
+.ob-hotkeycard-sub {
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.ob-tryarea {
+  margin-top: 12px;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #fff;
+  border: 0.5px solid var(--hair);
+  min-height: 160px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex: 1;
+}
+
+.ob-tryarea-idle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--ink-3);
+  text-align: center;
+  letter-spacing: -0.1px;
+}
+
+.ob-tryarea[data-state="idle"] .ob-tryarea-recording,
+.ob-tryarea[data-state="idle"] .ob-tryarea-success {
+  display: none;
+}
+
+.ob-tryarea[data-state="recording"] {
+  align-items: center;
+  justify-content: center;
+}
+
+.ob-tryarea[data-state="recording"] .ob-tryarea-idle,
+.ob-tryarea[data-state="recording"] .ob-tryarea-success {
+  display: none;
+}
+
+.ob-tryarea[data-state="recording"] .ob-tryarea-recording {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.ob-tryarea[data-state="success"] .ob-tryarea-idle,
+.ob-tryarea[data-state="success"] .ob-tryarea-recording {
+  display: none;
+}
+
+.ob-tryarea[data-state="success"] .ob-tryarea-success {
+  display: block !important;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  letter-spacing: -0.2px;
+  text-wrap: pretty;
+}
+
+.ob-tryarea-caret {
+  display: inline-block;
+  width: 1.5px;
+  height: 18px;
+  background: var(--ink);
+  margin-left: 2px;
+  vertical-align: middle;
+  animation: ob-caret 1s steps(1) infinite;
+}
+
+@keyframes ob-caret {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.ob-wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 48px;
+}
+
+.ob-wave span {
+  width: 4px;
+  background: var(--rec);
+  border-radius: 2px;
+  animation: ob-wave 1.1s ease-in-out infinite;
+}
+
+.ob-wave span:nth-child(odd) { animation-duration: 0.9s; }
+.ob-wave span:nth-child(3n) { animation-delay: 0.08s; }
+.ob-wave span:nth-child(5n) { animation-delay: 0.16s; }
+.ob-wave span:nth-child(7n) { animation-delay: 0.24s; }
+
+@keyframes ob-wave {
+  0%, 100% { height: 12%; }
+  50% { height: 100%; }
+}
+
+.ob-wave-label {
+  font-size: 10.5px;
+  color: var(--rec);
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ob-wave-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--rec);
+  animation: ob-rec-pulse 1.4s ease-out infinite;
+}
+
+@keyframes ob-rec-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(214, 74, 44, 0.5); }
+  100% { box-shadow: 0 0 0 12px rgba(214, 74, 44, 0); }
+}
+
+.ob-tryfeedback {
+  margin-top: 10px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-height: 18px;
+}
+
+.ob-tryfeedback-idle {
+  font-size: 13px;
+  color: var(--ink-3);
+  letter-spacing: -0.1px;
+}
+
+.ob-tryfeedback-success {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #1f9d57;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+}
+
+.ob-tryfeedback-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #1f9d57;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+/* When either child has the [hidden] attribute (toggled by the JS), defer
+   to that — no special data-state override needed. The previous rule that
+   forced display:inline-flex on a hidden success span made BOTH the idle
+   and success messages render in success state. */
+.ob-tryfeedback-idle[hidden],
+.ob-tryfeedback-success[hidden] {
+  display: none;
+}
+
+/* ─── Step 7 · Done ───────────────────────────────────────────────── */
+
+.ob-done-stack {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.ob-done-check {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: rgba(31, 157, 87, 0.14);
+  color: #1f9d57;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 24px;
+}
+
+.ob-quickref {
+  margin-top: 28px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 0.5px solid var(--hair);
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.ob-quickref-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.ob-quickref-key {
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #fff;
+  border: 0.5px solid var(--hair);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ob-quickref-label {
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* ─── Footer (swap sets per step) ─────────────────────────────────── */
+
+.ob-footer {
+  padding-top: 20px;
+  border-top: 0.5px solid var(--hair-2);
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.ob-foot-set {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.ob-foot-set[hidden] {
+  display: none;
+}
+
+/* Buttons match the design Btn() variants — distinct from the main shell
+ * .btn class so the onboarding footer can stay tight without inheriting
+ * the chrome card-style background. */
+
+.ob-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease, opacity 0.12s ease;
+}
+
+.ob-btn[hidden] {
+  display: none;
+}
+
+.ob-btn:disabled,
+.ob-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ob-btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.ob-btn-primary:hover:not(:disabled) {
+  background: #000;
+}
+
+.ob-btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 0.5px solid var(--hair);
+}
+
+.ob-btn-secondary:hover:not(:disabled) {
+  background: var(--paper-2);
+}
+
+.ob-btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+}
+
+.ob-btn-ghost:hover:not(:disabled) {
+  background: var(--hair-2);
+  color: var(--ink);
+}
+
+.ob-btn-accent {
+  background: var(--rec);
+  color: #fff;
+}
+
+.ob-btn-accent:hover:not(:disabled) {
+  filter: brightness(0.95);
+}
+
+.ob-btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* ─── Try-it-out inline hotkey picker ─────────────────────────────── */
+
+.ob-trypicker {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--paper-2);
+  border: 1.5px dashed var(--hair);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ob-trypicker[hidden] {
+  display: none;
+}
+
+.ob-trypicker-state {
+  font-size: 11px;
+  color: var(--rec);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ob-trypicker-state.is-error {
+  color: var(--danger);
+}
+
+.ob-trypicker-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.ob-trypicker-preset {
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: 0.5px solid var(--hair);
+  background: var(--card);
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.ob-trypicker-preset:hover {
+  background: var(--paper);
+}
+
+.ob-trypicker-preset.is-current {
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.ob-trypicker-actions {
+  display: flex;
+  gap: 6px;
+}

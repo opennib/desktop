@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    />
+    <title>opennib HUD</title>
+    <link rel="stylesheet" href="./hud.css" />
+  </head>
+  <body>
+    <div id="pill" data-state="idle" role="status" aria-live="polite">
+      <span id="dot" aria-hidden="true"></span>
+
+      <div id="middle">
+        <div id="waveform" aria-hidden="true">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span>
+        </div>
+        <div id="idle-text">Hold fn to dictate</div>
+      </div>
+
+      <div id="status" class="mono">
+        <span id="status-text"></span>
+        <div id="spinner" aria-hidden="true">
+          <span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./hud.ts"></script>
+  </body>
+</html>

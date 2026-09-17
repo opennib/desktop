@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';"
+    />
+    <title>opennib · Setup</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./onboarding.css" />
+  </head>
+  <body class="onboarding-body">
+    <main class="ob-shell">
+      <!-- macOS hiddenInset titlebar drag region -->
+      <div class="ob-titlebar" aria-hidden="true"></div>
+
+      <div class="ob-content">
+        <!-- Step pips: full-width bars, one per step, filled when completed -->
+        <div id="ob-pips" class="ob-pips" role="progressbar" aria-valuemin="1" aria-valuemax="7" aria-valuenow="1">
+          <div class="ob-pip is-active" data-pip="1"></div>
+          <div class="ob-pip" data-pip="2"></div>
+          <div class="ob-pip" data-pip="3"></div>
+          <div class="ob-pip" data-pip="4"></div>
+          <div class="ob-pip" data-pip="5"></div>
+          <div class="ob-pip" data-pip="6"></div>
+          <div class="ob-pip" data-pip="7"></div>
+        </div>
+
+        <section class="ob-stage">
+          <!-- ─── Step 1 · Welcome ─────────────────────────────────── -->
+          <article id="ob-pane-welcome" class="ob-pane" data-pane="welcome">
+            <div class="ob-welcome-row">
+              <div class="ob-welcome-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="70" height="70" fill="none">
+                  <path
+                    d="M 5 6 Q 5 3, 8 3 L 16 3 Q 19 3, 19 6 L 19 12 L 12 21.5 L 5 12 Z"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linejoin="round"
+                    stroke-linecap="round"
+                  />
+                  <circle cx="12" cy="7.5" r="1.4" fill="currentColor" />
+                  <line
+                    x1="12"
+                    y1="9.5"
+                    x2="12"
+                    y2="17"
+                    stroke="currentColor"
+                    stroke-width="1.4"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </div>
+              <div class="ob-welcome-copy">
+                <div class="ob-welcome-wordmark">opennib</div>
+                <div class="ob-welcome-version mono">FOR MAC · 1.0</div>
+                <p class="ob-welcome-lead">
+                  Hold a hotkey, speak, release. opennib transcribes locally and
+                  types it into whatever app you're in.
+                </p>
+                <ul class="ob-welcome-bullets">
+                  <li>
+                    <span class="ob-bullet-dot" aria-hidden="true"></span>
+                    <span><b>On device</b> — Runs locally. No cloud. No telemetry.</span>
+                  </li>
+                  <li>
+                    <span class="ob-bullet-dot" aria-hidden="true"></span>
+                    <span><b>System-wide</b> — Works in any text field.</span>
+                  </li>
+                  <li>
+                    <span class="ob-bullet-dot" aria-hidden="true"></span>
+                    <span><b>Open source</b> — MIT — inspect every line.</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </article>
+
+          <!-- ─── Step 2 · Accessibility ───────────────────────────── -->
+          <article id="ob-pane-acc" class="ob-pane" data-pane="acc" hidden>
+            <div class="ob-two-col">
+              <div class="ob-text-col">
+                <div class="ob-step-label mono">Step 2 of 7</div>
+                <h1 class="ob-h">Grant Accessibility access</h1>
+                <p class="ob-p">
+                  macOS needs your permission for opennib to type text into other
+                  apps. We use this only to insert transcripts — nothing else.
+                </p>
+                <div class="ob-callout">
+                  In <b>System Settings → Privacy &amp; Security → Accessibility</b>,
+                  switch on the row labeled <b>opennib</b>.
+                </div>
+                <div id="ob-acc-status" class="ob-pillstatus" data-state="undetermined">
+                  <span class="ob-pill-dot"></span>
+                  <span class="ob-pill-label">Not granted yet</span>
+                </div>
+              </div>
+              <div class="ob-side-col" aria-hidden="true">
+                <div class="ob-prefmock">
+                  <div class="ob-prefmock-titlebar">
+                    <span class="ob-prefmock-light" style="background:#ff5f57"></span>
+                    <span class="ob-prefmock-light" style="background:#ffbd2e"></span>
+                    <span class="ob-prefmock-light" style="background:#28c840"></span>
+                    <div class="ob-prefmock-title">Privacy &amp; Security</div>
+                  </div>
+                  <div class="ob-prefmock-body">
+                    <div class="ob-prefmock-section">Accessibility</div>
+                    <div class="ob-prefmock-row is-highlight">
+                      <span class="ob-prefmock-icon is-app">
+                        <svg viewBox="0 0 24 24" width="9" height="9" fill="none">
+                          <path
+                            d="M 5 6 Q 5 3, 8 3 L 16 3 Q 19 3, 19 6 L 19 12 L 12 21.5 L 5 12 Z"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linejoin="round"
+                          />
+                        </svg>
+                      </span>
+                      <span class="ob-prefmock-name">opennib</span>
+                      <span class="ob-prefmock-toggle is-on">
+                        <span class="ob-prefmock-knob"></span>
+                      </span>
+                    </div>
+                    <div class="ob-prefmock-row">
+                      <span class="ob-prefmock-icon"></span>
+                      <span class="ob-prefmock-name">Raycast</span>
+                      <span class="ob-prefmock-toggle is-on">
+                        <span class="ob-prefmock-knob"></span>
+                      </span>
+                    </div>
+                    <div class="ob-prefmock-row">
+                      <span class="ob-prefmock-icon"></span>
+                      <span class="ob-prefmock-name">Hammerspoon</span>
+                      <span class="ob-prefmock-toggle">
+                        <span class="ob-prefmock-knob"></span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ─── Step 3 · Microphone ──────────────────────────────── -->
+          <article id="ob-pane-mic" class="ob-pane" data-pane="mic" hidden>
+            <div class="ob-two-col">
+              <div class="ob-text-col">
+                <div class="ob-step-label mono">Step 3 of 7</div>
+                <h1 class="ob-h">Let opennib hear you</h1>
+                <p class="ob-p">
+                  Audio is processed locally and discarded immediately. Nothing is
+                  recorded, stored, or sent off this Mac.
+                </p>
+                <div class="ob-inputchip">
+                  <span class="ob-chip ink">Default input</span>
+                  <span class="ob-inputchip-name">System microphone</span>
+                  <span class="ob-inputchip-rate mono">48 kHz</span>
+                </div>
+                <div id="ob-mic-status" class="ob-pillstatus" data-state="undetermined">
+                  <span class="ob-pill-dot"></span>
+                  <span class="ob-pill-label">Not granted yet</span>
+                </div>
+              </div>
+              <div class="ob-side-col" aria-hidden="true">
+                <div class="ob-mic-halo">
+                  <div class="ob-mic-ring" data-ring="1"></div>
+                  <div class="ob-mic-ring" data-ring="2"></div>
+                  <div class="ob-micbtn">
+                    <svg viewBox="0 0 24 24" width="44" height="44" fill="none">
+                      <rect x="9" y="3" width="6" height="12" rx="3" stroke="currentColor" stroke-width="1.6" />
+                      <path
+                        d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+
+          <!-- ─── Step 4 · Pick a model ────────────────────────────── -->
+          <article id="ob-pane-model" class="ob-pane" data-pane="model" hidden>
+            <div class="ob-step-label mono">Step 4 of 7</div>
+            <h1 class="ob-h">Pick a model</h1>
+            <p class="ob-p">
+              Bigger models are more accurate but slower. You can change this any
+              time in Settings.
+            </p>
+            <div class="ob-list-wrap">
+              <div id="ob-model-list" class="ob-model-list" role="radiogroup" aria-label="Whisper model">
+                <!-- populated at runtime -->
+              </div>
+              <div class="ob-list-fade" aria-hidden="true"></div>
+            </div>
+            <div id="ob-model-foot" class="ob-modelfoot">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path
+                  d="M7 1v8m0 0L4 6m3 3l3-3M2 12h10"
+                  stroke="currentColor"
+                  stroke-width="1.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <span class="ob-modelfoot-text">
+                One HTTPS request to <span class="mono">huggingface.co</span>, then
+                no network.
+              </span>
+              <span id="ob-model-size" class="mono ob-modelfoot-size">—</span>
+            </div>
+          </article>
+
+          <!-- ─── Step 5 · Pick language ───────────────────────────── -->
+          <article id="ob-pane-lang" class="ob-pane" data-pane="lang" hidden>
+            <div class="ob-step-label mono">Step 5 of 7</div>
+            <h1 class="ob-h">Pick your dictation language</h1>
+            <p class="ob-p">
+              Choose <b>one</b> language to dictate in. Speak more than one? Turn on
+              auto-detect below.
+            </p>
+            <div class="ob-list-wrap ob-list-wrap-tight">
+              <div id="ob-lang-grid" class="ob-lang-grid">
+                <!-- populated at runtime -->
+              </div>
+              <div class="ob-list-fade" aria-hidden="true"></div>
+            </div>
+            <label class="ob-autodetect">
+              <span class="ob-autodetect-icon" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3" />
+                  <ellipse cx="7" cy="7" rx="2.5" ry="5.5" stroke="currentColor" stroke-width="1.3" />
+                  <path d="M1.5 7h11" stroke="currentColor" stroke-width="1.3" />
+                </svg>
+              </span>
+              <span class="ob-autodetect-text">
+                <span class="ob-autodetect-title">Speaking multiple languages? Auto-detect</span>
+                <span class="ob-autodetect-sub">
+                  Slower per utterance. Recommended only if you switch languages
+                  mid-conversation.
+                </span>
+              </span>
+              <span class="ob-switch" id="ob-autodetect-switch" role="switch" aria-checked="false" tabindex="0">
+                <span class="ob-switch-knob"></span>
+              </span>
+            </label>
+          </article>
+
+          <!-- ─── Step 6 · Try it out ──────────────────────────────── -->
+          <article id="ob-pane-try" class="ob-pane" data-pane="try" hidden>
+            <div class="ob-step-label mono ob-step-label-center">Step 6 of 7</div>
+            <h1 class="ob-h ob-h-center">Try it out</h1>
+            <p class="ob-p ob-p-center">
+              Hold <span id="ob-try-prompt-key" class="ob-kbd-inline mono">fn</span> and say:
+              <i>"Hello opennib."</i>
+            </p>
+            <div class="ob-hotkeycard">
+              <div class="ob-hotkeycard-text">
+                <div class="ob-hotkeycard-title">Push-to-talk hotkey</div>
+                <div class="ob-hotkeycard-sub">Hold to record · release to insert</div>
+              </div>
+              <span id="ob-try-card-key" class="ob-kbd mono">fn</span>
+              <button id="ob-try-change" type="button" class="ob-btn ob-btn-secondary ob-btn-sm">
+                Change
+              </button>
+            </div>
+
+            <!-- Inline hotkey picker, hidden until user clicks Change. -->
+            <div id="ob-try-picker" class="ob-trypicker" hidden>
+              <div class="ob-trypicker-state mono" id="ob-trypicker-state">Press a key…</div>
+              <div class="ob-trypicker-presets" id="ob-trypicker-presets"></div>
+              <div class="ob-trypicker-actions">
+                <button id="ob-trypicker-cancel" type="button" class="ob-btn ob-btn-ghost ob-btn-sm">
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            <div id="ob-try-area" class="ob-tryarea" data-state="idle">
+              <div class="ob-tryarea-idle">
+                Hold
+                <span id="ob-try-area-key" class="ob-kbd-inline mono">fn</span>
+                and say a sentence — try <i>"hello opennib"</i>
+              </div>
+              <div class="ob-tryarea-recording" hidden>
+                <div class="ob-wave" aria-hidden="true">
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                  <span></span><span></span><span></span><span></span><span></span>
+                </div>
+                <div class="ob-wave-label mono">
+                  <span class="ob-wave-pulse"></span>
+                  Listening
+                </div>
+              </div>
+              <div class="ob-tryarea-success" hidden>
+                <span id="ob-try-text" class="ob-tryarea-text"></span>
+                <span class="ob-tryarea-caret" aria-hidden="true"></span>
+              </div>
+            </div>
+            <div class="ob-tryfeedback" id="ob-try-feedback">
+              <span class="ob-tryfeedback-idle">Ready when you are.</span>
+              <span class="ob-tryfeedback-success" hidden>
+                <span class="ob-tryfeedback-check">✓</span>
+                Nice — that worked! Continue when ready.
+              </span>
+            </div>
+          </article>
+
+          <!-- ─── Step 7 · Done ────────────────────────────────────── -->
+          <article id="ob-pane-done" class="ob-pane" data-pane="done" hidden>
+            <div class="ob-done-stack">
+              <div class="ob-done-check" aria-hidden="true">✓</div>
+              <h1 class="ob-h ob-h-large">You're set.</h1>
+              <p class="ob-p ob-p-center ob-p-wide">
+                opennib lives in your menu bar. Hold
+                <span class="ob-kbd-inline mono">fn</span>
+                in any app to dictate, release to insert.
+              </p>
+              <div class="ob-quickref">
+                <div class="ob-quickref-item">
+                  <span class="ob-quickref-key mono">fn</span>
+                  <span class="ob-quickref-label">Hold to dictate</span>
+                </div>
+                <div class="ob-quickref-item">
+                  <span class="ob-quickref-key mono">⌥ ⇧ H</span>
+                  <span class="ob-quickref-label">Show history</span>
+                </div>
+                <div class="ob-quickref-item">
+                  <span class="ob-quickref-key mono">⌥ ⇧ V</span>
+                  <span class="ob-quickref-label">Insert last transcript</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <!-- Footer is shared across panes; the button set swaps per step -->
+        <footer class="ob-footer" id="ob-footer">
+          <!-- Step 1 -->
+          <div class="ob-foot-set" data-foot="welcome">
+            <button id="ob-quit" type="button" class="ob-btn ob-btn-ghost">Quit</button>
+            <button id="ob-welcome-next" type="button" class="ob-btn ob-btn-primary">
+              Get started →
+            </button>
+          </div>
+          <!-- Step 2 -->
+          <div class="ob-foot-set" data-foot="acc" hidden>
+            <button id="ob-acc-skip" type="button" class="ob-btn ob-btn-ghost">Skip</button>
+            <button id="ob-acc-later" type="button" class="ob-btn ob-btn-secondary">
+              I'll do it later
+            </button>
+            <button id="ob-acc-open" type="button" class="ob-btn ob-btn-primary">
+              Open System Settings
+            </button>
+            <button id="ob-acc-next" type="button" class="ob-btn ob-btn-primary" hidden>
+              Continue →
+            </button>
+          </div>
+          <!-- Step 3 -->
+          <div class="ob-foot-set" data-foot="mic" hidden>
+            <button id="ob-mic-back" type="button" class="ob-btn ob-btn-ghost">Back</button>
+            <button id="ob-mic-request" type="button" class="ob-btn ob-btn-primary">
+              Allow microphone →
+            </button>
+            <button id="ob-mic-open" type="button" class="ob-btn ob-btn-secondary" hidden>
+              Open System Settings
+            </button>
+            <button id="ob-mic-next" type="button" class="ob-btn ob-btn-primary" hidden>
+              Continue →
+            </button>
+          </div>
+          <!-- Step 4 -->
+          <div class="ob-foot-set" data-foot="model" hidden>
+            <button id="ob-model-back" type="button" class="ob-btn ob-btn-ghost">Back</button>
+            <button id="ob-model-next" type="button" class="ob-btn ob-btn-primary">
+              Download &amp; continue →
+            </button>
+          </div>
+          <!-- Step 5 -->
+          <div class="ob-foot-set" data-foot="lang" hidden>
+            <button id="ob-lang-back" type="button" class="ob-btn ob-btn-ghost">Back</button>
+            <button id="ob-lang-next" type="button" class="ob-btn ob-btn-primary">
+              Continue →
+            </button>
+          </div>
+          <!-- Step 6 -->
+          <div class="ob-foot-set" data-foot="try" hidden>
+            <button id="ob-try-back" type="button" class="ob-btn ob-btn-ghost">Back</button>
+            <button id="ob-try-next" type="button" class="ob-btn ob-btn-primary">
+              Continue →
+            </button>
+          </div>
+          <!-- Step 7 -->
+          <div class="ob-foot-set" data-foot="done" hidden>
+            <button id="ob-done-settings" type="button" class="ob-btn ob-btn-secondary">
+              Open settings
+            </button>
+            <button id="ob-finish" type="button" class="ob-btn ob-btn-primary">
+              Start using opennib →
+            </button>
+          </div>
+        </footer>
+      </div>
+    </main>
+    <script type="module" src="./onboarding.ts"></script>
+  </body>
+</html>

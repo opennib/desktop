@@ -1,0 +1,402 @@
+/* opennib tray popover — v0.8 paper theme on a frosted card.
+   Lives in a frameless transparent BrowserWindow anchored under the
+   macOS menu bar icon. Width is fixed; height fits the content. */
+
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/newsreader-400-italic.woff2") format("woff2");
+}
+
+:root {
+  --ink: #17181c;
+  --ink-2: #565a63;
+  --ink-3: #8b909a;
+  --ink-4: #c2c6cd;
+  --paper: #f5f6f8;
+  --paper-2: #eceef2;
+  --card: #ffffff;
+  --hair: rgba(20, 22, 28, 0.09);
+  --hair-2: rgba(20, 22, 28, 0.05);
+  --rec: #d64a2c;
+  --hover: rgba(10, 122, 255, 0.85);
+  --toggle-on: #1f9d57;
+
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
+    sans-serif;
+  font-size: 13px;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+#popover {
+  margin: 8px;
+  padding: 6px;
+  background: rgba(247, 244, 238, 0.94);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25),
+    0 0 0 0.5px rgba(0, 0, 0, 0.1);
+  color: var(--ink);
+}
+
+.view[hidden] {
+  display: none;
+}
+
+/* ─── header ─────────────────────────────────────────────────────── */
+
+.popover-head {
+  padding: 12px 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-tile {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.brand-wordmark {
+  font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+#status-line {
+  color: var(--ink-3);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+/* ─── tray toggle (32×18 track, 14×14 knob) ──────────────────────── */
+
+.tray-toggle {
+  width: 32px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.15);
+  border: none;
+  padding: 0;
+  margin: 0;
+  position: relative;
+  cursor: default;
+  flex-shrink: 0;
+  transition: background 120ms ease;
+}
+
+.tray-toggle.on {
+  background: var(--toggle-on);
+}
+
+.tray-toggle-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition: transform 120ms ease;
+}
+
+.tray-toggle.on .tray-toggle-knob {
+  transform: translateX(14px);
+}
+
+/* ─── hint pill ──────────────────────────────────────────────────── */
+
+.hint-pill {
+  margin: 2px 4px 6px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink-2);
+  transition: opacity 120ms ease;
+}
+
+.hint-pill.dimmed {
+  opacity: 0.45;
+}
+
+.hint-text {
+  flex: 1;
+}
+
+.hint-key {
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--card);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: 0;
+  text-transform: none;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.08);
+}
+
+/* ─── divider ────────────────────────────────────────────────────── */
+
+.divider {
+  height: 0.5px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 5px 0;
+}
+
+/* ─── quick-setting rows (Mic / Language) ────────────────────────── */
+
+.quick-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: -0.05px;
+  text-align: left;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.quick-setting svg {
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+.qs-label {
+  color: var(--ink-2);
+}
+
+.qs-value {
+  flex: 1;
+  text-align: right;
+  color: var(--ink);
+  font-size: 12.5px;
+  letter-spacing: -0.05px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.qs-chev {
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+
+.quick-setting:hover {
+  background: var(--hover);
+  color: #fff;
+}
+
+.quick-setting:hover .qs-label,
+.quick-setting:hover .qs-value,
+.quick-setting:hover svg {
+  color: #fff;
+}
+
+/* ─── menu items ─────────────────────────────────────────────────── */
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: -0.05px;
+  text-align: left;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.menu-item:disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.menu-item svg {
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+
+.menu-label {
+  flex: 1;
+}
+
+.menu-accel {
+  color: var(--ink-3);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+}
+
+.menu-item:hover {
+  background: var(--hover);
+  color: #fff;
+}
+
+.menu-item:hover svg {
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.menu-item:hover .menu-accel {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ─── submenu (mic / language picker) ────────────────────────────── */
+
+.submenu-head {
+  padding: 10px 10px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submenu-back {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(0, 0, 0, 0.05);
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  padding: 0;
+}
+
+.submenu-back:hover {
+  background: var(--hover);
+  color: #fff;
+}
+
+.submenu-title {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: var(--ink);
+}
+
+.picker-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.picker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: default;
+}
+
+.picker-row .picker-check {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+
+.picker-row:not(.selected) .picker-check {
+  visibility: hidden;
+}
+
+.picker-row .picker-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.picker-row .picker-primary {
+  font-size: 13px;
+  color: var(--ink);
+  letter-spacing: -0.05px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker-row .picker-sub {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.picker-row:hover {
+  background: var(--hover);
+}
+
+.picker-row:hover .picker-primary,
+.picker-row:hover .picker-sub,
+.picker-row:hover .picker-check {
+  color: #fff;
+}

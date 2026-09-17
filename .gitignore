@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+out/
+dist/
+release/
+
+# Compiled macOS Swift helpers (rebuilt via `npm run build:native`)
+native/fn-key-monitor
+native/paste-helper
+
+# Packaged installers
+*.dmg
+*.zip
+*.exe
+*.AppImage
+*.deb
+
+# Model weights
+*.bin
+*.gguf
+
+# OS files
+.DS_Store
+
+# Logs
+*.log
+
+# Local env
+.env*

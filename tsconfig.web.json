@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  // Deliberately self-contained (no `extends` reaching outside the package):
+  // the renderer config — DOM libs, no `@types/node`. Shares its base options
+  // with tsconfig.node.json — keep the two in sync.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "useDefineForClassFields": true,
+    "rootDir": ".",
+    "noEmit": true,
+    "types": []
+  },
+  "include": ["src/renderer/**/*", "src/shared/**/*"]
+}

@@ -1,0 +1,6 @@
+node_modules/
+out/
+release/
+native/fn-key-monitor
+native/paste-helper
+package-lock.json

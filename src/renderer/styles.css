@@ -1,0 +1,1532 @@
+/* opennib v0.8 — main window: tokens + AppShell + page styles.
+   Layout per docs/design-references/handoff_opennib/sources/desktop-window.jsx
+   and desktop-prefs.jsx. */
+
+@font-face {
+  font-family: "Newsreader";
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/newsreader-400-italic.woff2") format("woff2");
+}
+
+:root {
+  /* paper (light) — full Ink scale per design system */
+  --ink: #17181c;
+  --ink-2: #565a63;
+  --ink-3: #8b909a;
+  --ink-4: #c2c6cd;
+  --paper: #f5f6f8;
+  --paper-2: #eceef2;
+  --card: #ffffff;
+  --hair: rgba(20, 22, 28, 0.09);
+  --hair-2: rgba(20, 22, 28, 0.05);
+
+  /* the one accent */
+  --rec: #d64a2c;
+  --rec-soft: rgba(214, 74, 44, 0.1);
+
+  /* status */
+  --success: #1f9d57;
+  --success-soft: rgba(31, 157, 87, 0.14);
+  --warn: #a16207;
+  --warn-soft: rgba(161, 98, 7, 0.12);
+  --danger: #c14545;
+
+  color-scheme: light;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    Roboto, system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--paper);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.mono {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-feature-settings: "ss01", "cv11";
+  letter-spacing: -0.01em;
+}
+
+/* ─── AppShell ─────────────────────────────────────────────────────── */
+
+#app {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #eef0f4, #eceef2);
+  border-right: 0.5px solid var(--hair);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 10px;
+  -webkit-app-region: drag;
+}
+
+.sidebar button,
+.sidebar input,
+.sidebar select {
+  -webkit-app-region: no-drag;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* macOS `titleBarStyle: "hiddenInset"` keeps the traffic-light buttons
+     floating at the top-left without a visible titlebar bar, so the sidebar
+     content starts at y=0 — collide with the buttons unless we leave room
+     for them (close/min/zoom are ~12px circles at y≈10). 32px of top space
+     clears them with breathing room. */
+  padding: 32px 8px 14px;
+}
+
+.brand-tile {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.brand-wordmark {
+  font-family: "Newsreader", "Iowan Old Style", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.status-pill {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.status-pill #indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--success);
+  flex-shrink: 0;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.status-pill #indicator[data-state="recording"] {
+  background: var(--rec);
+  box-shadow: 0 0 0 3px var(--rec-soft);
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+.status-pill #indicator[data-state="processing"] {
+  background: var(--warn);
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+.status-pill #status {
+  margin: 0;
+  font-size: 11.5px;
+  color: var(--ink-2);
+  letter-spacing: -0.05px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.nav {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.nav-group-label {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 500;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 16px 10px 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.nav-item svg {
+  flex-shrink: 0;
+  color: var(--ink-3);
+}
+
+.nav-item:hover {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink);
+}
+
+.nav-item:hover svg {
+  color: var(--ink-2);
+}
+
+.nav-item[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.nav-item[aria-selected="true"] svg {
+  color: var(--paper);
+}
+
+.nav-item > span:first-of-type {
+  flex: 1;
+}
+
+.nav-count {
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+
+.nav-item[aria-selected="true"] .nav-count {
+  color: rgba(251, 248, 241, 0.7);
+}
+
+.sidebar-footer {
+  padding: 10px 10px;
+  margin-top: 8px;
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
+.sidebar-footer kbd {
+  padding: 1px 5px;
+  background: var(--card);
+  border-radius: 3px;
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 10.5px;
+}
+
+/* ─── Content ──────────────────────────────────────────────────────── */
+
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  overflow-y: auto;
+  padding: 0;
+  min-width: 0;
+  /* Reserve the scrollbar gutter even when content fits — otherwise filtering
+     history/dictionary or toggling the hotkey modal makes the scrollbar
+     appear/disappear, which shifts the content ~15px horizontally and reads
+     as the window "jumping" with every keystroke. */
+  scrollbar-gutter: stable;
+}
+
+/* Same reasoning for the sidebar's nav scroll. */
+.nav {
+  scrollbar-gutter: stable;
+}
+
+.tab-panel {
+  display: flex;
+  flex-direction: column;
+  padding: 0 22px 24px;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tab-panel[hidden] {
+  display: none;
+}
+
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 0.5px solid var(--hair-2);
+  min-height: 60px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+  line-height: 1.15;
+}
+
+.page-sub {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  max-width: 540px;
+}
+
+.page-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* ─── Search field (toolbar) ──────────────────────────────────────── */
+
+.search-field {
+  width: 240px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: var(--paper-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  border: 0.5px solid transparent;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.search-field:focus-within {
+  border-color: var(--ink-3);
+  background: var(--card);
+}
+
+.search-field svg {
+  flex-shrink: 0;
+  color: currentColor;
+}
+
+.search-field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 12.5px;
+}
+
+.search-field input::placeholder {
+  color: var(--ink-3);
+}
+
+.search-accel {
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.search-field:focus-within .search-accel {
+  display: none;
+}
+
+/* ─── Buttons ─────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0.5px solid var(--hair);
+  border-radius: 7px;
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.05px;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+.btn:hover {
+  background: var(--paper-2);
+}
+
+.btn-primary {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+
+.btn-primary:hover {
+  background: #000;
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--hair-2);
+}
+
+.btn-danger {
+  color: var(--danger);
+}
+
+.btn-danger:hover {
+  background: rgba(193, 69, 69, 0.08);
+}
+
+.btn-sm {
+  padding: 4px 10px;
+  font-size: 11.5px;
+}
+
+.btn[disabled],
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.kbd-soft {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--paper-2);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  border: 0.5px solid var(--hair);
+}
+
+/* ─── Readiness banner ────────────────────────────────────────────── */
+
+.readiness {
+  margin: 14px 22px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 0.5px solid rgba(180, 132, 0, 0.4);
+  background: var(--warn-soft);
+  border-radius: 10px;
+}
+
+.readiness[hidden] {
+  display: none;
+}
+
+.readiness-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.readiness-row span {
+  flex: 1;
+  min-width: 0;
+}
+
+.readiness-row button {
+  flex-shrink: 0;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 0.5px solid var(--hair);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.readiness-row button:hover {
+  background: var(--paper-2);
+}
+
+/* ─── Empty state ─────────────────────────────────────────────────── */
+
+.empty-state {
+  margin: 16px 0 0;
+  padding: 24px 16px;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: center;
+  border: 0.5px dashed var(--hair);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.empty-state[hidden] {
+  display: none;
+}
+
+/* ─── History ─────────────────────────────────────────────────────── */
+
+.history-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 0 0;
+}
+
+.history-section-label {
+  margin: 14px 0 8px;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.history-section-label:first-child {
+  margin-top: 0;
+}
+
+.history-row {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  background: transparent;
+  border: 0.5px solid transparent;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  cursor: default;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.history-row.is-selected {
+  background: var(--card);
+  border-color: var(--hair);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.history-row:hover:not(.is-selected) {
+  background: rgba(0, 0, 0, 0.025);
+}
+
+.history-row-tile {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  flex-shrink: 0;
+  background: var(--paper-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+
+.history-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-row-meta {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.history-row-text {
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.4;
+  letter-spacing: -0.05px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.history-row-text mark {
+  background: var(--rec-soft);
+  color: var(--ink);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.history-row-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.12s ease;
+}
+
+.history-row:hover .history-row-actions,
+.history-row.is-selected .history-row-actions {
+  opacity: 1;
+}
+
+.history-row-action {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.history-row-action:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ink);
+}
+
+/* ─── Dictionary ──────────────────────────────────────────────────── */
+
+.dict-columns {
+  display: grid;
+  grid-template-columns: 200px 24px 1fr 60px;
+  padding: 10px 16px 6px;
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  gap: 4px;
+}
+
+.dict-card {
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.dictionary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.dict-row {
+  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: 200px 24px 1fr 60px;
+  align-items: center;
+  border-bottom: 0.5px solid var(--hair-2);
+  gap: 4px;
+}
+
+.dict-row:last-child {
+  border-bottom: none;
+}
+
+.dict-row-term {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dict-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-4);
+}
+
+.dict-row-replacement {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-weight: 500;
+  letter-spacing: -0.05px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dict-row-term.is-empty {
+  color: var(--ink-3);
+  font-weight: 400;
+  font-style: italic;
+}
+
+.dict-row-delete {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.dict-row-delete button {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--ink-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.dict-row:hover .dict-row-delete button {
+  opacity: 1;
+}
+
+.dict-row-delete button:hover {
+  background: rgba(193, 69, 69, 0.08);
+  color: var(--danger);
+}
+
+.dict-add-row {
+  display: grid;
+  grid-template-columns: 200px 24px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 0.5px solid var(--hair-2);
+  background: var(--paper);
+}
+
+.dict-add-input {
+  border: 0.5px solid var(--hair);
+  background: var(--card);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  min-width: 0;
+}
+
+.dict-add-input.mono {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+
+.dict-add-input:focus {
+  border-color: var(--ink-3);
+}
+
+.dict-add-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.dict-empty {
+  margin: 12px 0 0;
+  padding: 18px 16px;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-align: center;
+  border: 0.5px dashed var(--hair);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.dict-empty[hidden] {
+  display: none;
+}
+
+.dict-help {
+  margin: 14px 4px 0;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.dict-help .mono {
+  font-size: 11px;
+}
+
+/* ─── Prefs (shared by Models, General, Dictation) ────────────────── */
+
+.pref-section {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pref-section-label {
+  margin: 0 0 8px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--ink-3);
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0;
+}
+
+.pref-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  background: var(--card);
+  border-bottom: 0.5px solid var(--hair-2);
+}
+
+/* Pref-rows stack inside a .pref-section. The first row in the stack gets
+   top-rounded corners, the last gets bottom-rounded corners with no divider,
+   and a row that's the only one gets all four corners rounded. We key on
+   `:first-of-type` rather than `:first-child` because the section's <h3>
+   label is the structural first child. */
+.pref-section > .pref-row:first-of-type {
+  border-radius: 10px 10px 0 0;
+}
+
+.pref-section > .pref-row:last-of-type {
+  border-bottom: none;
+  border-radius: 0 0 10px 10px;
+}
+
+.pref-section > .pref-row:first-of-type:last-of-type {
+  border-radius: 10px;
+}
+
+.pref-row-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pref-row-label {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: -0.05px;
+}
+
+.pref-row-hint {
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
+.select-field {
+  min-width: 180px;
+  padding: 5px 10px;
+  border: 0.5px solid var(--hair);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.select-field:focus {
+  outline: none;
+  border-color: var(--ink-3);
+}
+
+.select-field:disabled {
+  opacity: 0.5;
+}
+
+/* ─── Models page ─────────────────────────────────────────────────── */
+
+.model-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.model-row {
+  padding: 12px 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 0.5px solid var(--hair-2);
+  cursor: default;
+  transition: background 0.12s ease;
+}
+
+.model-row:last-child {
+  border-bottom: none;
+}
+
+.model-row[data-active="true"] {
+  background: rgba(214, 74, 44, 0.04);
+}
+
+.model-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1.2px solid var(--ink-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.model-row[data-installed="true"] .model-radio {
+  border-color: var(--ink-3);
+}
+
+.model-row[data-active="true"] .model-radio {
+  background: var(--ink);
+  border: none;
+}
+
+.model-radio-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--paper);
+  display: none;
+}
+
+.model-row[data-active="true"] .model-radio-dot {
+  display: block;
+}
+
+.model-meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.model-meta-line {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.model-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.1px;
+}
+
+.model-size {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10.5px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+
+.model-desc {
+  font-size: 12px;
+  color: var(--ink-2);
+  margin-top: 2px;
+}
+
+.model-state {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.model-state[data-state="downloading"] {
+  color: var(--rec);
+}
+
+.model-state[data-state="failed"] {
+  color: var(--danger);
+}
+
+.model-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.chip-rec {
+  background: var(--rec-soft);
+  color: var(--rec);
+}
+
+/* ─── Permissions list (General) ──────────────────────────────────── */
+
+.perm-list {
+  background: var(--card);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.perm-row {
+  padding: 14px 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 0.5px solid var(--hair-2);
+}
+
+.perm-row:last-child {
+  border-bottom: none;
+}
+
+.perm-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: var(--paper-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+}
+
+.perm-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.perm-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.05px;
+}
+
+.perm-hint {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  line-height: 1.4;
+}
+
+.perm-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.perm-status[data-state="granted"] {
+  color: var(--success);
+}
+
+.perm-status[data-state="required"] {
+  color: var(--rec);
+}
+
+.perm-status[data-state="denied"] {
+  color: var(--rec);
+}
+
+.perm-status svg {
+  flex-shrink: 0;
+}
+
+.perm-row-required {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ─── Privacy + About + reset ─────────────────────────────────────── */
+
+.privacy-blurb {
+  margin: 0;
+  padding: 14px 2px;
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.6;
+  letter-spacing: -0.05px;
+}
+
+.privacy-bold {
+  font-weight: 600;
+}
+
+.about-inline-wordmark {
+  font-size: 17px;
+}
+
+.about-inline-meta {
+  margin-left: 10px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  letter-spacing: 0.05em;
+}
+
+/* ─── iOS-style switch toggle ─────────────────────────────────────── */
+
+.switch {
+  position: relative;
+  width: 38px;
+  height: 23px;
+  border-radius: 999px;
+  background: rgba(120, 120, 128, 0.32);
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease;
+}
+
+.switch[aria-checked="true"] {
+  background: #34c759;
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: left 0.15s ease;
+}
+
+.switch[aria-checked="true"] .switch-knob {
+  left: 17px;
+}
+
+.switch:focus-visible {
+  outline: 2px solid var(--rec-soft);
+  outline-offset: 2px;
+}
+
+/* ─── Segmented control (mode picker) ─────────────────────────────── */
+
+.segmented {
+  display: inline-flex;
+  gap: 4px;
+  padding: 3px;
+  background: var(--paper-2);
+  border-radius: 7px;
+}
+
+.seg-btn {
+  padding: 5px 12px;
+  border-radius: 5px;
+  border: none;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.seg-btn:hover:not(.is-active) {
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink);
+}
+
+.seg-btn.is-active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* ─── Modal (hotkey picker) ───────────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 16, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modal-fade-in 0.15s ease;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-card {
+  width: 440px;
+  background: var(--card);
+  border-radius: 14px;
+  padding: 24px 26px 18px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 0 0 0.5px var(--hair);
+  animation: modal-pop-in 0.18s ease;
+  /* Lock the card to its tallest state so the capture/hint switch and
+     preset highlight never resize (and visually re-center) the dialog. */
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
+}
+
+@keyframes modal-pop-in {
+  from {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.modal-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.3px;
+}
+
+.modal-sub {
+  margin: 6px 0 16px;
+  font-size: 13px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+
+.modal-footer {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.hotkey-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.hotkey-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 0.5px solid var(--hair);
+  background: var(--paper);
+  color: var(--ink);
+  cursor: pointer;
+  text-align: left;
+  /* Reserve enough height that the 2-line description doesn't stretch one
+     card while leaving siblings short — keeps all preset cards the same
+     height so clicking between them never reflows the grid. */
+  min-height: 78px;
+  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.hotkey-option:hover {
+  background: var(--paper-2);
+}
+
+/* Use box-shadow + border-color for the "selected" state so the card's outer
+   dimensions stay identical to an unselected card. Changing border-width
+   instead would grow each card by 1px on click, which compounds across the
+   grid and reads as the modal "jumping". */
+.hotkey-option.is-selected {
+  background: #fff;
+  border-color: var(--ink);
+  box-shadow: inset 0 0 0 1px var(--ink);
+}
+
+.hotkey-option-key {
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: var(--card);
+  border: 0.5px solid var(--hair);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+}
+
+.hotkey-option.is-selected .hotkey-option-key {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+.hotkey-option-label {
+  font-size: 13px;
+  color: var(--ink-2);
+  letter-spacing: -0.05px;
+}
+
+.hotkey-option.is-selected .hotkey-option-label {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+/* ─── Key capture region (inside hotkey modal) ────────────────────── */
+
+.hotkey-capture {
+  margin: 0 0 16px;
+  padding: 22px 16px 18px;
+  border-radius: 12px;
+  background: var(--paper-2);
+  border: 1.5px dashed var(--hair);
+  text-align: center;
+  outline: none;
+  cursor: text;
+  transition: border-color 0.15s ease, background 0.15s ease;
+  /* Hold a stable height so the modal card doesn't grow/shrink (and visually
+     "jump") when the captured-key chip appears, or when the hint switches
+     between one and two lines. */
+  min-height: 138px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.hotkey-capture:focus-within,
+.hotkey-capture.is-listening {
+  border-color: var(--ink-3);
+  background: var(--card);
+}
+
+.hotkey-capture-state {
+  font-size: 12px;
+  color: var(--ink-3);
+  letter-spacing: -0.05px;
+}
+
+.hotkey-capture.is-listening .hotkey-capture-state {
+  color: var(--rec);
+  font-weight: 500;
+}
+
+.hotkey-capture-key {
+  margin: 8px auto 0;
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hotkey-capture-key[hidden] {
+  display: none;
+}
+
+.hotkey-capture-hint {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+
+.hotkey-capture-hint.is-error {
+  color: var(--rec);
+}
+
+.hotkey-modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 12px;
+  font-size: 11px;
+  color: var(--ink-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hotkey-modal-divider::before,
+.hotkey-modal-divider::after {
+  content: "";
+  flex: 1;
+  height: 0.5px;
+  background: var(--hair);
+}
+
+/* ─── First-run shortcut hint (D-S-1) ─────────────────────────────── */
+
+.modal-backdrop.is-dark {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.first-run-card {
+  width: 460px;
+  padding: 32px 36px 28px;
+  border-radius: 20px;
+  background: rgba(20, 18, 16, 0.96);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  color: #fff;
+  text-align: center;
+  animation: modal-pop-in 0.2s ease;
+}
+
+.first-run-glyph {
+  display: flex;
+  justify-content: center;
+  color: #fff;
+}
+
+.first-run-title {
+  margin: 14px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.4px;
+}
+
+.first-run-body {
+  margin: 8px auto 0;
+  max-width: 340px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.5;
+}
+
+.first-run-key {
+  margin: 22px auto 0;
+  display: inline-block;
+  padding: 18px 40px;
+  min-width: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+  font-size: 28px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.first-run-sub {
+  margin: 22px 0 0;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.first-run-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.first-run-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: -0.05px;
+}
+
+.first-run-btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.first-run-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.first-run-btn-primary {
+  background: #fff;
+  color: var(--ink);
+}
+
+.first-run-btn-primary:hover {
+  background: rgba(255, 255, 255, 0.94);
+}

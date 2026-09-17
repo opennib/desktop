@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: typecheck + build + vitest
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+      # Swift helpers, macOS only — the script no-ops on other platforms.
+      - run: npm run build:native
+        if: runner.os == 'macOS'
+      # Includes the real-worker integration tests: they spawn the `bare`
+      # binary and bind a unix socket, both fine on hosted runners.
+      - run: npm test
