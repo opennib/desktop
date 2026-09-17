@@ -159,7 +159,13 @@ architecture. Untrimmed, the app directory is several gigabytes.
   on GNOME/KDE Wayland the hotkey may silently never fire.
 - **No first-run check for `wtype` / `xdotool`.** Missing them surfaces as a
   spawn error rather than a helpful message.
-- **Builds are unsigned** on every platform.
+- **Builds are unsigned** on every platform. One visible consequence on
+  macOS: the paste helper is a separate binary that macOS does not attribute
+  to the app, so it gets its **own** Accessibility entry. The first paste
+  triggers the system prompt for it; if you decline or remove that entry,
+  pasting silently stops until you re-enable "paste-helper" under
+  System Settings → Privacy & Security → Accessibility. Developer ID signing
+  (v1.0) collapses the two entries into one.
 - **Models are downloaded on first use**, not bundled — the first launch
   needs a network connection and some patience. Nothing else ever does.
 

@@ -2,14 +2,20 @@ import { describe, expect, it, vi } from "vitest"
 
 import { PasterError } from "@opennib/core"
 
-import { MacPaster } from "../../../src/main/services/paster"
+import {
+  MacPaster,
+  PASTE_HELPER_EXIT_NOT_TRUSTED,
+  PASTE_HELPER_NOT_TRUSTED_MESSAGE,
+} from "../../../src/main/services/paster"
 
-function makePaster(overrides: {
-  writeText?: (t: string) => void
-  exec?: (p: string) => Promise<void>
-  pasteHelperPath?: string
-  clipboardSettleMs?: number
-} = {}) {
+function makePaster(
+  overrides: {
+    writeText?: (t: string) => void
+    exec?: (p: string) => Promise<void>
+    pasteHelperPath?: string
+    clipboardSettleMs?: number
+  } = {},
+) {
   const writeText = overrides.writeText ?? vi.fn()
   const exec = overrides.exec ?? vi.fn(async () => {})
   const pasteHelperPath = overrides.pasteHelperPath ?? "/path/to/paste-helper"
@@ -94,6 +100,25 @@ describe("MacPaster", () => {
       throw new Error("expected PasterError")
     } catch (err) {
       expect(err).toBeInstanceOf(PasterError)
+      expect((err as PasterError).cause).toBe(cause)
+    }
+  })
+
+  it("names the Accessibility grant when the helper exits with the not-trusted code", async () => {
+    const cause = Object.assign(new Error("Command failed: paste-helper"), {
+      code: PASTE_HELPER_EXIT_NOT_TRUSTED,
+    })
+    const exec = vi.fn(async () => {
+      throw cause
+    })
+    const { paster } = makePaster({ exec })
+
+    try {
+      await paster.paste("x")
+      throw new Error("expected PasterError")
+    } catch (err) {
+      expect(err).toBeInstanceOf(PasterError)
+      expect((err as PasterError).message).toBe(PASTE_HELPER_NOT_TRUSTED_MESSAGE)
       expect((err as PasterError).cause).toBe(cause)
     }
   })

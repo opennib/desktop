@@ -8,6 +8,17 @@ export interface ExecBinary {
   (path: string): Promise<void>
 }
 
+/**
+ * Exit code `paste-helper` uses when macOS refused it Accessibility trust.
+ * The helper is a separate binary, so its grant is separate from the app's;
+ * see the header comment in native/paste-helper.swift.
+ */
+export const PASTE_HELPER_EXIT_NOT_TRUSTED = 2
+
+export const PASTE_HELPER_NOT_TRUSTED_MESSAGE =
+  "opennib's paste helper is not allowed to control the computer. " +
+  "Enable it under System Settings → Privacy & Security → Accessibility, then try again."
+
 export interface MacPasterOptions {
   readonly clipboard: ClipboardLike
   readonly pasteHelperPath: string
@@ -21,6 +32,13 @@ export interface MacPasterOptions {
 }
 
 const DEFAULT_SETTLE_MS = 50
+
+/** Node's execFile error carries the child's exit status as `code`. */
+function exitCodeOf(cause: unknown): number | undefined {
+  if (typeof cause !== "object" || cause === null) return undefined
+  const code = (cause as { code?: unknown }).code
+  return typeof code === "number" ? code : undefined
+}
 
 /**
  * Paster on macOS: write to the system clipboard, wait for it to settle, then
@@ -47,6 +65,9 @@ export class MacPaster implements Paster {
     try {
       await this.options.exec(this.options.pasteHelperPath)
     } catch (cause) {
+      if (exitCodeOf(cause) === PASTE_HELPER_EXIT_NOT_TRUSTED) {
+        throw new PasterError(PASTE_HELPER_NOT_TRUSTED_MESSAGE, cause)
+      }
       throw new PasterError("paste-helper execution failed", cause)
     }
   }
