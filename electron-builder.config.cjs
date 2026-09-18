@@ -96,6 +96,16 @@ async function finalizeBundle(context) {
   })
   console.log(`  • verified ${runtimePkg} + bare/core-worker.mjs in bundle`)
 
+  // node-global-key-listener spawns a bundled helper on Windows/Linux (and for
+  // legacy macOS combos). npm strips the executable bit from those files, and
+  // the library's fallback is an admin-password prompt to chmod them at
+  // runtime. Set the bit at pack time instead.
+  const keyServerBin = path.join(nodeModules, "node-global-key-listener", "bin")
+  for (const name of ["X11KeyServer", "MacKeyServer"]) {
+    const bin = path.join(keyServerBin, name)
+    if (fs.existsSync(bin)) fs.chmodSync(bin, 0o755)
+  }
+
   let removed = 0
   const walk = (dir) => {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

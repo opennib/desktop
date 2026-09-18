@@ -7,7 +7,7 @@ import { log, type Hotkey, type Paster } from "@opennib/core"
 import { GlobalKeyboardListener } from "node-global-key-listener"
 
 import { GlobalKeyListenerHotkey } from "./services/global-key-hotkey"
-import { MacFnHotkey } from "./services/hotkey"
+import { MAC_HELPER_COMBOS, MacFnHotkey, type KeyboardAccessState } from "./services/hotkey"
 import { MacPaster } from "./services/paster"
 import { SystemPaster } from "./services/system-paster"
 
@@ -58,21 +58,31 @@ export function createPaster(): Paster {
 }
 
 /**
- * Build the Hotkey adapter that knows how to register `combo`. macOS's Fn key
- * is invisible to JS-level key hooks, so "Fn" must route to the native Swift
- * helper; every other combo goes through `node-global-key-listener` (which
- * works on macOS, Windows, and Linux). Picking the right adapter at creation
- * time lets the host swap hotkeys at runtime by tearing down the old adapter
- * and asking for a fresh one with the new combo.
+ * Build the Hotkey adapter that knows how to register `combo`. On macOS every
+ * offered preset (Fn, Left Control, Right Option, Right Command) goes through
+ * the native Swift helper: Fn is invisible to JS-level key hooks, and using
+ * one signed helper for all of them means one Input Monitoring grant and no
+ * third-party binary. Windows and Linux, and any legacy macOS combo not on
+ * that list, go through `node-global-key-listener`. Picking the adapter at
+ * creation time lets the host swap hotkeys at runtime by tearing down the old
+ * adapter and asking for a fresh one with the new combo.
  */
-export function createHotkey(combo: string): Hotkey {
-  if (combo === "Fn") {
-    if (process.platform !== "darwin") {
-      throw new Error("Fn hotkey is only available on macOS")
-    }
+export interface CreateHotkeyOptions {
+  /** Keyboard-access reports from adapters that can tell (the Fn helper). */
+  readonly onKeyboardAccess?: (state: KeyboardAccessState) => void
+}
+
+export function createHotkey(combo: string, options: CreateHotkeyOptions = {}): Hotkey {
+  if (combo === "Fn" && process.platform !== "darwin") {
+    throw new Error("Fn hotkey is only available on macOS")
+  }
+  if (process.platform === "darwin" && MAC_HELPER_COMBOS.includes(combo)) {
     return new MacFnHotkey({
       binaryPath: nativeBinaryPath("OPENNIB_FN_MONITOR_PATH", "fn-key-monitor"),
       spawn,
+      ...(options.onKeyboardAccess !== undefined
+        ? { onKeyboardAccess: options.onKeyboardAccess }
+        : {}),
     })
   }
   return new GlobalKeyListenerHotkey({

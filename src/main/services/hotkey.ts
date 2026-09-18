@@ -14,18 +14,36 @@ export interface ChildProcessLike {
 
 export type SpawnLike = (path: string, args?: readonly string[]) => ChildProcessLike
 
+/**
+ * Keyboard-access state reported by the helper. "waiting" means macOS has not
+ * granted it Input Monitoring / Accessibility yet, so Fn presses cannot be
+ * seen; "granted" once the monitor is live.
+ */
+export type KeyboardAccessState = "waiting" | "granted"
+
+/** {@link KeyboardAccessState} plus "unknown" for adapters that don't report. */
+export type KeyboardAccessStatus = KeyboardAccessState | "unknown"
+
 export interface MacFnHotkeyOptions {
   readonly binaryPath: string
   readonly spawn: SpawnLike
+  readonly onKeyboardAccess?: (state: KeyboardAccessState) => void
 }
 
-const FN_COMBO = "Fn"
+/**
+ * Combos the Swift helper can watch. All modifiers (they surface as
+ * flagsChanged, which is also how Fn arrives), chosen so nothing a user holds
+ * while typing is on the list: fn and Left Control on the left half of the
+ * keyboard, Right Option and Right Command on the right. See
+ * native/fn-key-monitor.swift.
+ */
+export const MAC_HELPER_COMBOS: readonly string[] = ["Fn", "LeftCtrl", "RightAlt", "RightCmd"]
 
 /**
- * macOS push-to-talk via the Fn key. The Fn key is not exposed to JS-level
- * libraries, so we run a tiny Swift helper that uses NSEvent's
- * `addGlobalMonitorForEvents` and prints "DOWN" / "UP" to stdout. We parse
- * those lines and dispatch to the provided handlers.
+ * macOS push-to-talk via the Swift key helper. Fn is not exposed to JS-level
+ * libraries at all, and the other presets are modifiers, so the helper watches
+ * the chosen key with NSEvent's `addGlobalMonitorForEvents` and prints
+ * "DOWN" / "UP" to stdout. We parse those lines and dispatch to the handlers.
  */
 export class MacFnHotkey implements Hotkey {
   private process: ChildProcessLike | null = null
@@ -34,8 +52,10 @@ export class MacFnHotkey implements Hotkey {
   constructor(private readonly options: MacFnHotkeyOptions) {}
 
   async register(combo: string, handlers: HotkeyHandlers): Promise<void> {
-    if (combo !== FN_COMBO) {
-      throw new HotkeyError(`unsupported combo on macOS Fn hotkey: ${combo}`)
+    if (!MAC_HELPER_COMBOS.includes(combo)) {
+      throw new HotkeyError(
+        `unsupported combo for the macOS key helper: ${combo} (allowed: ${MAC_HELPER_COMBOS.join(", ")})`,
+      )
     }
     if (this.process !== null) {
       throw new HotkeyError("hotkey already registered")
@@ -43,7 +63,7 @@ export class MacFnHotkey implements Hotkey {
 
     let child: ChildProcessLike
     try {
-      child = this.options.spawn(this.options.binaryPath)
+      child = this.options.spawn(this.options.binaryPath, [combo])
     } catch (cause) {
       throw new HotkeyError("failed to spawn fn-key-monitor", cause)
     }
@@ -59,7 +79,13 @@ export class MacFnHotkey implements Hotkey {
         const line = raw.trim()
         if (line === "DOWN") handlers.onPress()
         else if (line === "UP") handlers.onRelease()
-        else if (line === "READY") log.info("fn-key-monitor ready")
+        else if (line === "READY") {
+          log.info("fn-key-monitor ready")
+          this.options.onKeyboardAccess?.("granted")
+        } else if (line === "WAITING_PERMISSION") {
+          log.warn("fn-key-monitor waiting for Input Monitoring permission")
+          this.options.onKeyboardAccess?.("waiting")
+        }
       }
     })
 

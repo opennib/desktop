@@ -41,8 +41,9 @@ export interface HostSettingsSnapshot {
    *   - macOS: "Fn"
    *   - Windows/Linux: "RightAlt"
    * Values that the bundled hotkey adapters understand:
-   *   "Fn" (mac native helper) · "RightAlt" · "LeftAlt" · "RightCtrl" ·
-   *   "ScrollLock" · "F8" · "F9".
+   *   macOS helper: "Fn" · "LeftCtrl" · "RightAlt" · "RightCmd"
+   *   node-global-key-listener (Win/Linux): "RightAlt" · "LeftAlt" ·
+   *   "RightCtrl" · "ScrollLock" · "F8" · "F9".
    */
   readonly hotkey: string
   /**
@@ -57,6 +58,12 @@ export interface HostSettingsSnapshot {
    * user-data-dir while still resetting on a clean wipe.
    */
   readonly onboardingCompleted: boolean
+  /**
+   * Last onboarding step the user reached ("welcome", "acc", "mic", "model",
+   * "lang", "try", "done"), so a relaunch mid-flow resumes there. Ignored
+   * once `onboardingCompleted` is true.
+   */
+  readonly onboardingStep: string
   /**
    * Whether the global push-to-talk hotkey is currently active. The OS hook
    * stays registered either way — toggling this just gates `beginCycle` /
@@ -115,6 +122,7 @@ export const DEFAULT_HOST_SETTINGS_SNAPSHOT: HostSettingsSnapshot = {
   hotkey: DEFAULT_HOTKEY,
   hotkeyMode: "hold",
   onboardingCompleted: false,
+  onboardingStep: "welcome",
   enabled: true,
   selectedMicId: null,
   launchAtLogin: false,
@@ -148,6 +156,10 @@ export function parseHostSettingsSnapshot(raw: unknown): HostSettingsSnapshot {
       typeof partial.onboardingCompleted === "boolean"
         ? partial.onboardingCompleted
         : DEFAULT_HOST_SETTINGS_SNAPSHOT.onboardingCompleted,
+    onboardingStep:
+      typeof partial.onboardingStep === "string" && partial.onboardingStep.length > 0
+        ? partial.onboardingStep
+        : DEFAULT_HOST_SETTINGS_SNAPSHOT.onboardingStep,
     enabled:
       typeof partial.enabled === "boolean"
         ? partial.enabled
@@ -339,6 +351,14 @@ export class JsonFileSettings implements Settings {
     await this.updateHost({ onboardingCompleted: value })
   }
 
+  onboardingStep(): string {
+    return this.host.onboardingStep
+  }
+
+  async setOnboardingStep(step: string): Promise<void> {
+    await this.updateHost({ onboardingStep: step })
+  }
+
   async setEnabled(value: boolean): Promise<void> {
     await this.updateHost({ enabled: value })
   }
@@ -413,6 +433,7 @@ export class JsonFileSettings implements Settings {
       next.hotkey === this.host.hotkey &&
       next.hotkeyMode === this.host.hotkeyMode &&
       next.onboardingCompleted === this.host.onboardingCompleted &&
+      next.onboardingStep === this.host.onboardingStep &&
       next.enabled === this.host.enabled &&
       next.selectedMicId === this.host.selectedMicId &&
       next.launchAtLogin === this.host.launchAtLogin &&

@@ -165,8 +165,11 @@ architecture. Untrimmed, the app directory is several gigabytes.
   to the app, so it gets its **own** Accessibility entry. The first paste
   triggers the system prompt for it; if you decline or remove that entry,
   pasting silently stops until you re-enable "paste-helper" under
-  System Settings → Privacy & Security → Accessibility. Developer ID signing
-  (v1.0) collapses the two entries into one.
+  System Settings → Privacy & Security → Accessibility. The Fn-key helper is
+  likewise its own client for **Input Monitoring**: it asks on first use, waits
+  for the grant, and reports the state so onboarding and the Permissions panel
+  can point you at the right pane. Developer ID signing (v1.0) collapses these
+  entries into one.
 - **Models are downloaded on first use**, not bundled — the first launch
   needs a network connection and some patience. Nothing else ever does.
 

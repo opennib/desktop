@@ -8,6 +8,7 @@ import { errorMessage } from "./error-message"
 import { createHotkey } from "./platform-adapters"
 import type { PreparedServices } from "./prepare-services"
 import { ElectronRecorderTransport } from "./services/electron-recorder-transport"
+import type { KeyboardAccessStatus } from "./services/hotkey"
 import { IpcRecorder } from "./services/recorder"
 
 export interface RunningPipeline {
@@ -15,6 +16,12 @@ export interface RunningPipeline {
   readonly services: PreparedServices
   /** Unregister the active push-to-talk hotkey + detach settings listeners. */
   readonly stop: () => Promise<void>
+  /**
+   * Whether the OS lets the hotkey helper see keystrokes. "waiting" means the
+   * user still has to allow it in Input Monitoring; "unknown" for adapters
+   * that cannot tell.
+   */
+  readonly keyboardAccess: () => KeyboardAccessStatus
 }
 
 export interface StartPipelineOptions {
@@ -112,10 +119,17 @@ export async function startPipeline(
     },
   }
 
+  let keyboardAccess: KeyboardAccessStatus = "unknown"
+  const hotkeyOptions = {
+    onKeyboardAccess: (state: KeyboardAccessStatus) => {
+      keyboardAccess = state
+    },
+  }
+
   let activeCombo = services.settings.hotkey()
   let activeHotkey: Hotkey
   try {
-    activeHotkey = createHotkey(activeCombo)
+    activeHotkey = createHotkey(activeCombo, hotkeyOptions)
     await activeHotkey.register(activeCombo, handlers)
   } catch (err) {
     log.error("failed to register push-to-talk hotkey", {
@@ -139,7 +153,8 @@ export async function startPipeline(
         })
       }
       try {
-        activeHotkey = createHotkey(nextCombo)
+        keyboardAccess = "unknown"
+        activeHotkey = createHotkey(nextCombo, hotkeyOptions)
         await activeHotkey.register(nextCombo, handlers)
         activeCombo = nextCombo
         log.info("hotkey swapped", { from: previousCombo, to: nextCombo })
@@ -151,7 +166,7 @@ export async function startPipeline(
           error: errorMessage(err),
         })
         try {
-          activeHotkey = createHotkey(previousCombo)
+          activeHotkey = createHotkey(previousCombo, hotkeyOptions)
           await activeHotkey.register(previousCombo, handlers)
           activeCombo = previousCombo
         } catch (restoreErr) {
@@ -177,5 +192,6 @@ export async function startPipeline(
       unsubscribeHotkeyChange()
       await activeHotkey.unregister(activeCombo)
     },
+    keyboardAccess: () => keyboardAccess,
   }
 }

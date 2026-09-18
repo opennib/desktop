@@ -69,6 +69,11 @@ export const IPC_CHANNELS = {
     complete: "onboarding:complete",
     reset: "onboarding:reset",
     setTryMode: "onboarding:set-try-mode",
+    setStep: "onboarding:set-step",
     transcript: "onboarding:transcript",
+  },
+  main: {
+    /** main→renderer: select a tab in the main window (e.g. "history"). */
+    showTab: "main:show-tab",
   },
 } as const

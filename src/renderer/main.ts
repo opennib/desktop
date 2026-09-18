@@ -63,9 +63,7 @@ const permissionsList = document.getElementById("permissions-list")
 const launchAtLoginToggle = document.getElementById(
   "toggle-launch-at-login",
 ) as HTMLButtonElement | null
-const showInDockToggle = document.getElementById(
-  "toggle-show-in-dock",
-) as HTMLButtonElement | null
+const showInDockToggle = document.getElementById("toggle-show-in-dock") as HTMLButtonElement | null
 const rowShowInDock = document.getElementById("row-show-in-dock")
 const resetOnboardingBtn = document.getElementById("reset-onboarding") as HTMLButtonElement | null
 
@@ -77,9 +75,7 @@ const hotkeyModalOptions = document.getElementById("hotkey-modal-options")
 const hotkeyModalCancelBtn = document.getElementById(
   "hotkey-modal-cancel",
 ) as HTMLButtonElement | null
-const hotkeyModalSaveBtn = document.getElementById(
-  "hotkey-modal-save",
-) as HTMLButtonElement | null
+const hotkeyModalSaveBtn = document.getElementById("hotkey-modal-save") as HTMLButtonElement | null
 const hotkeyCapture = document.getElementById("hotkey-capture")
 const hotkeyCaptureState = document.getElementById("hotkey-capture-state")
 const hotkeyCaptureKey = document.getElementById("hotkey-capture-key")
@@ -97,12 +93,8 @@ const languageSelect = document.getElementById("language") as HTMLSelectElement 
 // First-run hint
 const firstRunHint = document.getElementById("first-run-hint")
 const firstRunKeyLabel = document.getElementById("first-run-key-label")
-const firstRunDismissBtn = document.getElementById(
-  "first-run-dismiss",
-) as HTMLButtonElement | null
-const firstRunChangeBtn = document.getElementById(
-  "first-run-change",
-) as HTMLButtonElement | null
+const firstRunDismissBtn = document.getElementById("first-run-dismiss") as HTMLButtonElement | null
+const firstRunChangeBtn = document.getElementById("first-run-change") as HTMLButtonElement | null
 
 // Readiness banner (still surfaces blocking issues at the top)
 const readinessBanner = document.getElementById("readiness")
@@ -170,6 +162,9 @@ const storedTab = (() => {
   }
 })()
 selectTab(isTabId(storedTab) ? storedTab : "history")
+window.opennib.nav.onShowTab((tab) => {
+  if (isTabId(tab)) selectTab(tab)
+})
 
 // ─── Cmd/Ctrl-F focuses search input on the active panel ─────────────
 
@@ -225,8 +220,7 @@ async function loadMicDevices(): Promise<void> {
     // the real devices. We expose "System default" as a virtual row already,
     // so the aliases would just duplicate the same physical device.
     micDevices = devices.filter(
-      (d) =>
-        d.kind === "audioinput" && d.deviceId !== "default" && d.deviceId !== "communications",
+      (d) => d.kind === "audioinput" && d.deviceId !== "default" && d.deviceId !== "communications",
     )
   } catch {
     // enumerateDevices can fail before mic permission is granted; user can
@@ -264,9 +258,11 @@ if (micSelect !== null) {
 
 const HOTKEY_LABELS: Readonly<Record<string, string>> = {
   Fn: "Hold fn",
-  RightAlt: "Hold Right Alt",
+  LeftCtrl: "Hold Left Control",
+  RightAlt: "Hold Right Option",
   LeftAlt: "Hold Left Alt",
   RightCtrl: "Hold Right Ctrl",
+  RightCmd: "Hold Right Command",
   ScrollLock: "Hold Scroll Lock",
   F8: "Hold F8",
   F9: "Hold F9",
@@ -274,9 +270,11 @@ const HOTKEY_LABELS: Readonly<Record<string, string>> = {
 
 const HOTKEY_KEY_LABELS: Readonly<Record<string, string>> = {
   Fn: "fn",
-  RightAlt: "⌥ R",
-  LeftAlt: "⌥ L",
-  RightCtrl: "⌃ R",
+  LeftCtrl: "Left ⌃",
+  RightAlt: "Right ⌥",
+  LeftAlt: "Left ⌥",
+  RightCtrl: "Right ⌃",
+  RightCmd: "Right ⌘",
   ScrollLock: "ScrLk",
   F8: "F8",
   F9: "F9",
@@ -284,21 +282,27 @@ const HOTKEY_KEY_LABELS: Readonly<Record<string, string>> = {
 
 const HOTKEY_OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   Fn: "Apple default. Doesn't collide with app shortcuts.",
-  RightAlt: "Single key, easy to hold.",
+  LeftCtrl: "Left of the keyboard. Rarely held while typing.",
+  RightAlt: "Right of the space bar, easy to hold.",
   LeftAlt: "Single key, common in Win/Linux apps.",
   RightCtrl: "Less commonly bound — usually safe.",
+  RightCmd: "Right of the space bar. Alone it triggers nothing.",
   ScrollLock: "Almost never used by other apps.",
-  F8: "Function-row key. Beware of Touch Bar Macs.",
-  F9: "Function-row key. Beware of Touch Bar Macs.",
+  F8: "Function-row key.",
+  F9: "Function-row key.",
 }
 
+/**
+ * Two keys on each half of the keyboard, none of them held during normal
+ * typing. On macOS all four go through the signed Swift helper; F8/F9 are
+ * media keys on Apple keyboards and Right Control is absent on laptops, so
+ * they are not offered there. Windows/Linux keep the plain-key set handled by
+ * node-global-key-listener.
+ */
 function platformHotkeyChoices(): readonly string[] {
-  // macOS hotkey backend on non-Fn combos uses node-global-key-listener; only
-  // a subset of its keys make sense as push-to-talk anchors (a single key the
-  // user can hold without triggering a system shortcut). Fn is mac-exclusive.
   const isMac = navigator.platform.toLowerCase().includes("mac")
   if (isMac) {
-    return ["Fn", "F8", "F9", "RightAlt", "RightCtrl"]
+    return ["Fn", "LeftCtrl", "RightAlt", "RightCmd"]
   }
   return ["RightAlt", "LeftAlt", "RightCtrl", "ScrollLock", "F8", "F9"]
 }
@@ -311,6 +315,8 @@ function renderHotkey(combo: string): void {
 // Map DOM `KeyboardEvent.code` values to our supported combo strings. Anything
 // not in this table is rejected with a friendly message in the modal.
 const KEY_CODE_TO_COMBO: Readonly<Record<string, string>> = {
+  ControlLeft: "LeftCtrl",
+  MetaRight: "RightCmd",
   AltRight: "RightAlt",
   AltLeft: "LeftAlt",
   ControlRight: "RightCtrl",
@@ -388,7 +394,7 @@ function setPendingCombo(combo: string, fromPress: boolean): void {
 function rejectCapturedKey(rawKey: string): void {
   if (hotkeyCaptureHint !== null) {
     hotkeyCaptureHint.classList.add("is-error")
-    hotkeyCaptureHint.innerHTML = `<span class="mono">${rawKey}</span> isn't supported. Try <span class="mono">F8</span>, <span class="mono">F9</span>, <span class="mono">Right Alt</span>, <span class="mono">Right Ctrl</span>, or <span class="mono">Scroll Lock</span> — or pick a preset below.`
+    hotkeyCaptureHint.innerHTML = `<span class="mono">${rawKey}</span> isn't supported. Pick one of the presets below, or press one of those keys.`
   }
 }
 
@@ -488,7 +494,7 @@ const X_SVG = `<svg viewBox="0 0 14 14" width="13" height="13" fill="none">
 function renderPermissions(snap: SystemStatusSnapshot): void {
   if (permissionsList === null) return
   const rows: {
-    key: "microphone" | "accessibility"
+    key: "microphone" | "accessibility" | "input-monitoring"
     icon: string
     label: string
     hint: string
@@ -502,8 +508,7 @@ function renderPermissions(snap: SystemStatusSnapshot): void {
     label: "Microphone",
     hint: "Required to hear your voice while you dictate.",
     state: snap.microphone,
-    cta:
-      snap.microphone === "granted" ? "none" : snap.microphone === "denied" ? "open" : "request",
+    cta: snap.microphone === "granted" ? "none" : snap.microphone === "denied" ? "open" : "request",
   })
 
   // Accessibility is a Mac-only concept; on Win/Linux it returns null. Skip
@@ -516,6 +521,19 @@ function renderPermissions(snap: SystemStatusSnapshot): void {
       hint: "Lets opennib insert transcribed text into the app you're typing in.",
       state: snap.accessibility,
       cta: snap.accessibility === "granted" ? "none" : "open",
+    })
+  }
+
+  // The hotkey helper is its own client to macOS until the app is signed;
+  // "unknown" means the active adapter can't report, so no row.
+  if (snap.keyboardAccess !== "unknown") {
+    rows.push({
+      key: "input-monitoring",
+      icon: ACC_ICON_SVG,
+      label: "Keyboard access",
+      hint: "Lets opennib notice when you hold the dictation key. Allow it under Input Monitoring.",
+      state: snap.keyboardAccess === "granted" ? "granted" : "undetermined",
+      cta: snap.keyboardAccess === "granted" ? "none" : "open",
     })
   }
 
@@ -559,8 +577,7 @@ function renderPermissions(snap: SystemStatusSnapshot): void {
 
 function renderReadiness(snapshot: SystemStatusSnapshot): void {
   if (readinessBanner === null) return
-  const issues: { key: string; message: string; cta?: { label: string; action: () => void } }[] =
-    []
+  const issues: { key: string; message: string; cta?: { label: string; action: () => void } }[] = []
 
   if (snapshot.loadError !== null) {
     const { modelId: id, message, kind } = snapshot.loadError
@@ -837,9 +854,7 @@ window.opennib.models.onProgress((event) => {
     state: event.state,
     error: event.error,
   })
-  const label = document.querySelector<HTMLSpanElement>(
-    `[data-model-state="${event.modelId}"]`,
-  )
+  const label = document.querySelector<HTMLSpanElement>(`[data-model-state="${event.modelId}"]`)
   if (label !== null) {
     label.textContent =
       event.state === "downloading"
@@ -924,15 +939,7 @@ function highlightMatch(text: string, query: string): string {
 
 function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
-    c === "&"
-      ? "&amp;"
-      : c === "<"
-        ? "&lt;"
-        : c === ">"
-          ? "&gt;"
-          : c === '"'
-            ? "&quot;"
-            : "&#39;",
+    c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === '"' ? "&quot;" : "&#39;",
   )
 }
 
@@ -1267,10 +1274,7 @@ function playTick(frequencyHz: number): void {
 
 function renderSoundToggles(snap: SettingsSnapshot): void {
   if (dictationSoundsToggle !== null) {
-    dictationSoundsToggle.setAttribute(
-      "aria-checked",
-      snap.dictationSounds ? "true" : "false",
-    )
+    dictationSoundsToggle.setAttribute("aria-checked", snap.dictationSounds ? "true" : "false")
   }
   if (notificationSoundsToggle !== null) {
     notificationSoundsToggle.setAttribute(

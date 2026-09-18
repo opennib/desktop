@@ -1,6 +1,7 @@
 import { ipcMain, shell } from "electron"
 
 import { IPC_CHANNELS } from "../ipc-channels"
+import type { KeyboardAccessStatus } from "../services/hotkey"
 import type { FsModelManager } from "../services/model-manager"
 import type { ElectronPermissions } from "../services/permissions"
 import type { JsonFileSettings } from "../services/settings"
@@ -27,11 +28,14 @@ export interface SystemIpcDeps {
   readonly modelManager: FsModelManager
   readonly settings: JsonFileSettings
   readonly modelLoadError: () => ModelLoadError | null
+  readonly keyboardAccess: () => KeyboardAccessStatus
 }
 
 export interface SystemStatus {
   readonly microphone: string
   readonly accessibility: string | null
+  /** See {@link RunningPipeline.keyboardAccess}. */
+  readonly keyboardAccess: KeyboardAccessStatus
   readonly activeModelId: string
   readonly activeModelInstalled: boolean
   readonly loadError: ModelLoadError | null
@@ -53,7 +57,7 @@ export function registerSystemIpc(deps: SystemIpcDeps): void {
   })
 
   ipcMain.handle(IPC_CHANNELS.system.openSettings, async (_event, target: unknown) => {
-    if (target !== "accessibility" && target !== "microphone") {
+    if (target !== "accessibility" && target !== "microphone" && target !== "input-monitoring") {
       throw new Error(`unsupported settings target: ${String(target)}`)
     }
     // Deep-link directly to the relevant Privacy & Security pane. Without this
@@ -61,10 +65,13 @@ export function registerSystemIpc(deps: SystemIpcDeps): void {
     // only triggers the system prompt the FIRST time it's called — every
     // subsequent click after a denied or dismissed prompt does nothing visible
     // and the user is stuck.
-    const url =
+    const pane =
       target === "accessibility"
-        ? "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
-        : "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone"
+        ? "Privacy_Accessibility"
+        : target === "input-monitoring"
+          ? "Privacy_ListenEvent"
+          : "Privacy_Microphone"
+    const url = `x-apple.systempreferences:com.apple.preference.security?${pane}`
     await shell.openExternal(url)
   })
 }
@@ -78,6 +85,7 @@ async function readyState(deps: SystemIpcDeps): Promise<SystemStatus> {
   return {
     microphone,
     accessibility,
+    keyboardAccess: deps.keyboardAccess(),
     activeModelId: deps.settings.whisperModelId(),
     activeModelInstalled,
     loadError: deps.modelLoadError(),

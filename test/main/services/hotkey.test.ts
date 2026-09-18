@@ -53,11 +53,42 @@ describe("MacFnHotkey", () => {
     const { child, spawn, hotkey } = setup()
     await hotkey.register("Fn", { onPress, onRelease })
 
-    expect(spawn).toHaveBeenCalledWith("/path/fn-key-monitor")
+    expect(spawn).toHaveBeenCalledWith("/path/fn-key-monitor", ["Fn"])
     child.emitStdout("READY\nDOWN\n")
     expect(onPress).toHaveBeenCalledOnce()
     child.emitStdout("UP\n")
     expect(onRelease).toHaveBeenCalledOnce()
+  })
+
+  it("reports keyboard access as waiting, then granted, from the helper's protocol", async () => {
+    const child = new FakeChild()
+    const onKeyboardAccess = vi.fn()
+    const hotkey = new MacFnHotkey({
+      binaryPath: "/path/fn-key-monitor",
+      spawn: vi.fn(() => child),
+      onKeyboardAccess,
+    })
+    await hotkey.register("Fn", { onPress, onRelease })
+
+    child.emitStdout("WAITING_PERMISSION\n")
+    expect(onKeyboardAccess).toHaveBeenLastCalledWith("waiting")
+    child.emitStdout("READY\n")
+    expect(onKeyboardAccess).toHaveBeenLastCalledWith("granted")
+    expect(onPress).not.toHaveBeenCalled()
+  })
+
+  it("passes a modifier combo to the helper and rejects combos it cannot watch", async () => {
+    const { child, spawn, hotkey } = setup()
+    await hotkey.register("RightCmd", { onPress, onRelease })
+    expect(spawn).toHaveBeenCalledWith("/path/fn-key-monitor", ["RightCmd"])
+    child.emitStdout("READY\nDOWN\nUP\n")
+    expect(onPress).toHaveBeenCalledOnce()
+    expect(onRelease).toHaveBeenCalledOnce()
+
+    const other = setup()
+    await expect(other.hotkey.register("F8", { onPress, onRelease })).rejects.toThrow(
+      /unsupported combo/,
+    )
   })
 
   it("buffers partial lines across data chunks", async () => {

@@ -24,6 +24,13 @@ export interface OnboardingIpcDeps {
    * onboarding window and hide the main shell so the flow replays from step 1.
    */
   readonly onReset: () => void
+  /**
+   * Invoked when the renderer enters Try-it-out. The host starts the
+   * dictation pipeline (hotkey helper + recorder) here rather than at boot,
+   * so the OS permission prompts it triggers appear on the screen that
+   * explains them, not on top of step 1.
+   */
+  readonly onTryModeEnter: () => void
 }
 
 let tryMode = false
@@ -41,11 +48,22 @@ export function registerOnboardingIpc(deps: OnboardingIpcDeps): void {
   ipcMain.handle(IPC_CHANNELS.onboarding.reset, async () => {
     tryMode = false
     await deps.settings.setOnboardingCompleted(false)
+    await deps.settings.setOnboardingStep("welcome")
     deps.onReset()
   })
 
   ipcMain.handle(IPC_CHANNELS.onboarding.setTryMode, async (_event, enabled: unknown) => {
     tryMode = Boolean(enabled)
+    if (tryMode) deps.onTryModeEnter()
+  })
+
+  // Persist progress so quitting mid-flow (macOS asks for that after some
+  // permission grants) resumes on the same step instead of step 1.
+  ipcMain.handle(IPC_CHANNELS.onboarding.setStep, async (_event, step: unknown) => {
+    if (typeof step !== "string" || step.length === 0) {
+      throw new Error(`onboarding step must be a non-empty string, got ${typeof step}`)
+    }
+    await deps.settings.setOnboardingStep(step)
   })
 }
 

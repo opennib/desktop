@@ -255,7 +255,7 @@ for (const back of document.querySelectorAll<HTMLButtonElement>("[data-back]")) 
 
 if (showHistoryBtn !== null) {
   showHistoryBtn.addEventListener("click", () => {
-    window.opennib.tray.showSettings()
+    window.opennib.tray.showSettings("history")
   })
 }
 
@@ -269,7 +269,7 @@ if (insertLastBtn !== null) {
 
 if (showSettingsBtn !== null) {
   showSettingsBtn.addEventListener("click", () => {
-    window.opennib.tray.showSettings()
+    window.opennib.tray.showSettings("general")
   })
 }
 if (quitBtn !== null) {

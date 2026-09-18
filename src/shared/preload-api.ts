@@ -24,6 +24,7 @@ export interface SettingsSnapshot {
   readonly dictationSounds: boolean
   readonly notificationSounds: boolean
   readonly firstRunHintShown: boolean
+  readonly onboardingStep: string
 }
 
 export type ModelKindId = "whisper" | "llm"
@@ -66,9 +67,15 @@ export interface DictionaryEntry {
   readonly createdAt: number
 }
 
+export type SettingsPane = "accessibility" | "microphone" | "input-monitoring"
+
+export type MainTab = "history" | "dictionary" | "models" | "general" | "dictation"
+
 export interface SystemStatusSnapshot {
   readonly microphone: "granted" | "denied" | "undetermined"
   readonly accessibility: "granted" | "denied" | "undetermined" | null
+  /** Whether the hotkey helper may see keystrokes ("waiting" = allow it in Input Monitoring). */
+  readonly keyboardAccess: "unknown" | "waiting" | "granted"
   readonly activeModelId: string
   readonly activeModelInstalled: boolean
   readonly loadError: {
@@ -140,7 +147,7 @@ export interface OpennibSystemApi {
   status(): Promise<SystemStatusSnapshot>
   requestMicrophone(): Promise<SystemStatusSnapshot>
   requestAccessibility(): Promise<SystemStatusSnapshot>
-  openSettings(target: "accessibility" | "microphone"): Promise<void>
+  openSettings(target: SettingsPane): Promise<void>
 }
 
 export interface OpennibOnboardingApi {
@@ -159,6 +166,8 @@ export interface OpennibOnboardingApi {
    * app yet).
    */
   setTryMode(enabled: boolean): Promise<void>
+  /** Persist the step the user is on so a relaunch resumes there. */
+  setStep(step: string): Promise<void>
   /** Fires once per transcript while try-mode is enabled. */
   onTranscript(handler: (text: string) => void): () => void
 }
@@ -167,7 +176,8 @@ export interface OpennibTrayApi {
   onShow(handler: () => void): () => void
   hide(): void
   quit(): void
-  showSettings(): void
+  /** Bring up the main window, optionally on a specific tab. */
+  showSettings(tab?: MainTab): void
   insertLast(): Promise<{ readonly inserted: boolean }>
 }
 
@@ -183,4 +193,10 @@ export interface OpennibPreloadApi {
   readonly system: OpennibSystemApi
   readonly tray: OpennibTrayApi
   readonly onboarding: OpennibOnboardingApi
+  readonly nav: OpennibNavApi
+}
+
+export interface OpennibNavApi {
+  /** main→renderer request to select a tab in the main window. */
+  onShowTab(handler: (tab: string) => void): () => void
 }

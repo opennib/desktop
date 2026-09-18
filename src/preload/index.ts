@@ -8,6 +8,8 @@ import type {
   ModelProgressEvent,
   OpennibPreloadApi,
   PipelineState,
+  MainTab,
+  SettingsPane,
   SettingsSnapshot,
   SystemStatusSnapshot,
   TranscriptEntry,
@@ -69,10 +71,7 @@ const api: OpennibPreloadApi = {
       ) as Promise<SettingsSnapshot>
     },
     setHotkey(combo: string): Promise<SettingsSnapshot> {
-      return ipcRenderer.invoke(
-        IPC_CHANNELS.settings.setHotkey,
-        combo,
-      ) as Promise<SettingsSnapshot>
+      return ipcRenderer.invoke(IPC_CHANNELS.settings.setHotkey, combo) as Promise<SettingsSnapshot>
     },
     setModel(modelId: string): Promise<SettingsSnapshot> {
       return ipcRenderer.invoke(
@@ -174,9 +173,7 @@ const api: OpennibPreloadApi = {
   },
   dictionary: {
     list(): Promise<readonly DictionaryEntry[]> {
-      return ipcRenderer.invoke(IPC_CHANNELS.dictionary.list) as Promise<
-        readonly DictionaryEntry[]
-      >
+      return ipcRenderer.invoke(IPC_CHANNELS.dictionary.list) as Promise<readonly DictionaryEntry[]>
     },
     add(entry: DictionaryEntry): Promise<void> {
       return ipcRenderer.invoke(IPC_CHANNELS.dictionary.add, entry) as Promise<void>
@@ -202,7 +199,7 @@ const api: OpennibPreloadApi = {
         IPC_CHANNELS.system.requestAccessibility,
       ) as Promise<SystemStatusSnapshot>
     },
-    openSettings(target: "accessibility" | "microphone"): Promise<void> {
+    openSettings(target: SettingsPane): Promise<void> {
       return ipcRenderer.invoke(IPC_CHANNELS.system.openSettings, target) as Promise<void>
     },
   },
@@ -218,8 +215,8 @@ const api: OpennibPreloadApi = {
     quit(): void {
       ipcRenderer.send(IPC_CHANNELS.tray.quit)
     },
-    showSettings(): void {
-      ipcRenderer.send(IPC_CHANNELS.tray.showSettings)
+    showSettings(tab?: MainTab): void {
+      ipcRenderer.send(IPC_CHANNELS.tray.showSettings, tab)
     },
     insertLast(): Promise<{ readonly inserted: boolean }> {
       return ipcRenderer.invoke(IPC_CHANNELS.tray.insertLast) as Promise<{
@@ -237,10 +234,20 @@ const api: OpennibPreloadApi = {
     setTryMode(enabled: boolean): Promise<void> {
       return ipcRenderer.invoke(IPC_CHANNELS.onboarding.setTryMode, enabled) as Promise<void>
     },
+    setStep(step: string): Promise<void> {
+      return ipcRenderer.invoke(IPC_CHANNELS.onboarding.setStep, step) as Promise<void>
+    },
     onTranscript(handler: (text: string) => void): () => void {
       const wrapped = (_event: IpcRendererEvent, text: string) => handler(text)
       ipcRenderer.on(IPC_CHANNELS.onboarding.transcript, wrapped)
       return () => ipcRenderer.off(IPC_CHANNELS.onboarding.transcript, wrapped)
+    },
+  },
+  nav: {
+    onShowTab(handler: (tab: string) => void): () => void {
+      const wrapped = (_event: IpcRendererEvent, tab: string) => handler(tab)
+      ipcRenderer.on(IPC_CHANNELS.main.showTab, wrapped)
+      return () => ipcRenderer.off(IPC_CHANNELS.main.showTab, wrapped)
     },
   },
 }

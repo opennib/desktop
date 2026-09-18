@@ -130,10 +130,7 @@ export function createHudWindow(): BrowserWindow {
   return win
 }
 
-export function setHudState(
-  hudWindow: BrowserWindow | undefined,
-  state: PipelineState,
-): void {
+export function setHudState(hudWindow: BrowserWindow | undefined, state: PipelineState): void {
   if (hudWindow === undefined || hudWindow.isDestroyed()) return
   hudWindow.webContents.send(IPC_CHANNELS.state.change, state)
   if (state === "idle") {
@@ -147,6 +144,10 @@ export function showMainWindow(mainWindow: BrowserWindow | undefined): void {
   if (mainWindow === undefined || mainWindow.isDestroyed()) return
   mainWindow.show()
   mainWindow.focus()
+  // With the dock icon hidden (the default), macOS treats us as a background
+  // app and show()+focus() alone often leaves the window behind the current
+  // one. Stealing activation is what a menu-bar app has to do here.
+  if (process.platform === "darwin") app.focus({ steal: true })
 }
 
 export function createOnboardingWindow(): BrowserWindow {

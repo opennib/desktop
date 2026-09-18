@@ -15,15 +15,7 @@ declare global {
 type PermissionState = "granted" | "denied" | "undetermined"
 type StepName = "welcome" | "acc" | "mic" | "model" | "lang" | "try" | "done"
 
-const STEP_ORDER: readonly StepName[] = [
-  "welcome",
-  "acc",
-  "mic",
-  "model",
-  "lang",
-  "try",
-  "done",
-]
+const STEP_ORDER: readonly StepName[] = ["welcome", "acc", "mic", "model", "lang", "try", "done"]
 
 /**
  * Curated language menu for the onboarding picker. We don't expose the full
@@ -99,27 +91,37 @@ const FALLBACK_META: ModelMeta = { quality: 3, speed: 3, desc: "" }
 // settings panel.
 const HOTKEY_KEY_LABELS: Readonly<Record<string, string>> = {
   Fn: "fn",
-  RightAlt: "⌥ R",
-  LeftAlt: "⌥ L",
-  RightCtrl: "⌃ R",
+  LeftCtrl: "Left ⌃",
+  RightAlt: "Right ⌥",
+  LeftAlt: "Left ⌥",
+  RightCtrl: "Right ⌃",
+  RightCmd: "Right ⌘",
   ScrollLock: "ScrLk",
   F8: "F8",
   F9: "F9",
 }
 
 const KEY_CODE_TO_COMBO: Readonly<Record<string, string>> = {
+  ControlLeft: "LeftCtrl",
   AltRight: "RightAlt",
   AltLeft: "LeftAlt",
   ControlRight: "RightCtrl",
+  MetaRight: "RightCmd",
   ScrollLock: "ScrollLock",
   F8: "F8",
   F9: "F9",
 }
 
+/**
+ * Two keys on each half of the keyboard, none of them held during normal
+ * typing. On macOS F8/F9 are media keys on Apple keyboards (no key code
+ * without fn) and Right Control is absent on laptop keyboards, so they are
+ * not offered there; Windows/Linux keep the plain-key set.
+ */
 function platformHotkeyPresets(): readonly string[] {
   const isMac = navigator.platform.toLowerCase().includes("mac")
   return isMac
-    ? ["Fn", "F8", "F9", "RightAlt", "RightCtrl"]
+    ? ["Fn", "LeftCtrl", "RightAlt", "RightCmd"]
     : ["RightAlt", "LeftAlt", "RightCtrl", "ScrollLock", "F8", "F9"]
 }
 
@@ -137,6 +139,8 @@ interface State {
   unsubSettings: (() => void) | null
   pendingDownloadModelId: string | null
   currentHotkey: string
+  /** True between "recording" and the transcript (or idle without one). */
+  awaitingTranscript: boolean
 }
 
 const state: State = {
@@ -153,6 +157,7 @@ const state: State = {
   unsubSettings: null,
   pendingDownloadModelId: null,
   currentHotkey: "Fn",
+  awaitingTranscript: false,
 }
 
 // ─── DOM helpers ──────────────────────────────────────────────────────
@@ -163,6 +168,10 @@ function $<T extends HTMLElement = HTMLElement>(id: string): T | null {
 
 function $$(selector: string): NodeListOf<HTMLElement> {
   return document.querySelectorAll<HTMLElement>(selector)
+}
+
+function isStepName(value: unknown): value is StepName {
+  return typeof value === "string" && (STEP_ORDER as readonly string[]).includes(value)
 }
 
 function pane(step: StepName): HTMLElement | null {
@@ -188,6 +197,9 @@ function setStep(next: StepName): void {
     void disableTryMode()
   }
   state.step = next
+  // Persist progress so a relaunch (macOS asks for one after some grants)
+  // resumes here instead of at step 1.
+  void window.opennib.onboarding.setStep(next)
   for (const s of STEP_ORDER) {
     const p = pane(s)
     if (p !== null) p.hidden = s !== next
@@ -205,7 +217,7 @@ function setStep(next: StepName): void {
   }
 
   stopAccessibilityPoll()
-  if (next === "acc" || next === "mic") {
+  if (next === "acc" || next === "mic" || next === "try" || next === "done") {
     startAccessibilityPoll()
   }
   if (next === "try") {
@@ -291,6 +303,7 @@ function startAccessibilityPoll(): void {
     void window.opennib.system.status().then((snap) => {
       updateAccPane(snap)
       updateMicPane(snap)
+      updateKeyboardAccess(snap)
     })
   }
   tick()
@@ -341,12 +354,8 @@ function renderModelList(): void {
     .map((m) => {
       const meta = MODEL_META[m.id] ?? FALLBACK_META
       const sel = m.id === state.selectedModelId
-      const recBadge = meta.recommended
-        ? `<span class="ob-chip rec">Recommended</span>`
-        : ""
-      const installedBadge = m.installed
-        ? `<span class="ob-model-installed">Installed</span>`
-        : ""
+      const recBadge = meta.recommended ? `<span class="ob-chip rec">Recommended</span>` : ""
+      const installedBadge = m.installed ? `<span class="ob-model-installed">Installed</span>` : ""
       return `
         <div class="ob-model-row ${sel ? "is-selected" : ""}" data-model-id="${m.id}" role="radio" aria-checked="${sel}">
           <span class="ob-model-radio"><span class="ob-model-radio-dot"></span></span>
@@ -394,9 +403,7 @@ function updateModelFoot(): void {
     sizeEl.textContent = `~${formatSize(selected.approxSizeBytes)}`
   }
   if (nextBtn !== null && selected !== undefined) {
-    nextBtn.textContent = selected.installed
-      ? "Continue →"
-      : "Download & continue →"
+    nextBtn.textContent = selected.installed ? "Continue →" : "Download & continue →"
   }
 }
 
@@ -561,6 +568,19 @@ function handleTryPickerKey(e: KeyboardEvent): void {
   })
 }
 
+/**
+ * Show the Input Monitoring callouts (try + done steps) while the hotkey
+ * helper reports it cannot see keystrokes yet. Hidden for "granted" and for
+ * "unknown" (adapters that can't report, or the pipeline not started yet).
+ */
+function updateKeyboardAccess(snapshot: SystemStatusSnapshot): void {
+  const waiting = snapshot.keyboardAccess === "waiting"
+  for (const id of ["ob-try-keyaccess", "ob-done-keyaccess"]) {
+    const el = $(id)
+    if (el !== null) el.hidden = !waiting
+  }
+}
+
 async function enableTryMode(): Promise<void> {
   if (state.tryMode) return
   state.tryMode = true
@@ -571,13 +591,25 @@ async function enableTryMode(): Promise<void> {
   setTryFeedback("idle")
 
   state.unsubState = window.opennib.state.onChange((s: PipelineState) => {
-    if (s === "recording") setTryAreaState("recording")
-    else if (s === "processing") setTryAreaState("recording")
+    if (s === "recording") {
+      state.awaitingTranscript = true
+      setTryAreaState("recording")
+      setTryFeedback("idle")
+    } else if (s === "processing") {
+      setTryAreaState("recording")
+    } else if (s === "idle" && state.awaitingTranscript) {
+      // The cycle ended without a transcript: the speech gate found nothing
+      // to transcribe (silence, or a tap too short to be an utterance).
+      state.awaitingTranscript = false
+      setTryAreaState("idle")
+      setTryFeedback("nothing")
+    }
     // success state is driven by transcript arrival, not pipeline state —
     // we want the transcript text visible, not a flicker back to idle.
   })
 
   state.unsubTranscript = window.opennib.onboarding.onTranscript((text: string) => {
+    state.awaitingTranscript = false
     const out = $("ob-try-text")
     if (out !== null) out.textContent = text
     setTryAreaState("success")
@@ -601,13 +633,15 @@ function setTryAreaState(s: "idle" | "recording" | "success"): void {
   area.dataset["state"] = s
 }
 
-function setTryFeedback(s: "idle" | "success"): void {
+function setTryFeedback(s: "idle" | "success" | "nothing"): void {
   const fb = $("ob-try-feedback")
   if (fb === null) return
   fb.dataset["state"] = s
   const idle = fb.querySelector<HTMLElement>(".ob-tryfeedback-idle")
+  const nothing = fb.querySelector<HTMLElement>(".ob-tryfeedback-nothing")
   const succ = fb.querySelector<HTMLElement>(".ob-tryfeedback-success")
-  if (idle !== null) idle.hidden = s === "success"
+  if (idle !== null) idle.hidden = s !== "idle"
+  if (nothing !== null) nothing.hidden = s !== "nothing"
   if (succ !== null) succ.hidden = s !== "success"
 }
 
@@ -638,6 +672,10 @@ async function init(): Promise<void> {
   attachModelProgress()
   renderModelList()
   renderLanguageGrid()
+
+  // Resume where a previous session left off (see setStep persistence).
+  const saved = settings.onboardingStep
+  if (isStepName(saved) && saved !== "welcome") setStep(saved)
 
   // Footer bindings — kept inline so wiring is in one place.
 
@@ -696,6 +734,12 @@ async function init(): Promise<void> {
   }
 
   // Step 6
+  bind("ob-try-keyaccess-open", () => {
+    void window.opennib.system.openSettings("input-monitoring")
+  })
+  bind("ob-done-keyaccess-open", () => {
+    void window.opennib.system.openSettings("input-monitoring")
+  })
   bind("ob-try-back", () => setStep("lang"))
   bind("ob-try-next", () => setStep("done"))
   bind("ob-try-change", openTryPicker)

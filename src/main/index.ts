@@ -1,4 +1,4 @@
-import { BrowserWindow, Notification, Tray, app, dialog, ipcMain } from "electron"
+import { BrowserWindow, Notification, Tray, app, dialog, globalShortcut, ipcMain } from "electron"
 
 import { log, type Paster } from "@opennib/core"
 
@@ -121,15 +121,20 @@ void app.whenReady().then(async () => {
     modelManager: services.modelManager,
     settings: services.settings,
     modelLoadError: services.modelLoadError,
+    keyboardAccess: () => running?.keyboardAccess() ?? "unknown",
   })
   registerOnboardingIpc({
     settings: services.settings,
     getWindow: () => onboardingWindow,
+    onTryModeEnter: () => {
+      void ensurePipeline()
+    },
     onComplete: () => {
       if (onboardingWindow !== undefined && !onboardingWindow.isDestroyed()) {
         onboardingWindow.close()
         onboardingWindow = undefined
       }
+      void ensurePipeline()
       showMainWindow(mainWindow)
     },
     onReset: () => {
@@ -210,39 +215,86 @@ void app.whenReady().then(async () => {
     isQuitting = true
     app.quit()
   })
-  ipcMain.on(IPC_CHANNELS.tray.showSettings, () => {
+  /** Bring the main window forward, optionally on a specific tab. */
+  const showMainTab = (tab?: unknown): void => {
     if (trayWindow !== undefined && !trayWindow.isDestroyed()) trayWindow.hide()
     showMainWindow(mainWindow)
-  })
-  ipcMain.handle(IPC_CHANNELS.tray.insertLast, async () => {
+    if (typeof tab === "string" && mainWindow !== undefined && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.main.showTab, tab)
+    }
+  }
+
+  const insertLastTranscript = async (): Promise<{ readonly inserted: boolean }> => {
     const recent = await services.history.list({ limit: 1 })
     const last = recent[0]
-    if (last === undefined) return { inserted: false as const }
+    if (last === undefined) return { inserted: false }
     if (trayWindow !== undefined && !trayWindow.isDestroyed()) trayWindow.hide()
     await services.paster.paste(last.text)
-    return { inserted: true as const }
-  })
+    return { inserted: true }
+  }
 
-  // Wait for the renderer to load, then start the Fn hotkey + recorder
-  // bridge. Recorder transport needs a real webContents, so it lives here.
-  await new Promise<void>((resolve) => {
-    if (mainWindow!.webContents.isLoading()) {
-      mainWindow!.webContents.once("did-finish-load", () => resolve())
-    } else {
-      resolve()
+  ipcMain.on(IPC_CHANNELS.tray.showSettings, (_event, tab: unknown) => showMainTab(tab))
+  ipcMain.handle(IPC_CHANNELS.tray.insertLast, () => insertLastTranscript())
+
+  // The shortcuts the onboarding "You're set" screen advertises.
+  for (const [accelerator, action] of [
+    ["Alt+Shift+H", () => showMainTab("history")],
+    [
+      "Alt+Shift+V",
+      () => {
+        void insertLastTranscript().catch((err) => {
+          log.warn("insert last transcript failed", {
+            error: err instanceof Error ? err.message : String(err),
+          })
+        })
+      },
+    ],
+  ] as const) {
+    if (!globalShortcut.register(accelerator, action)) {
+      log.warn("global shortcut registration failed", { accelerator })
     }
-  })
+  }
+  app.on("will-quit", () => globalShortcut.unregisterAll())
 
-  running = await startPipeline({
-    services: { ...services, paster: tryModePaster },
-    window: mainWindow,
-    onStateChange: (state) => {
-      if (mainWindow !== undefined && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send(IPC_CHANNELS.state.change, state)
-      }
-      setHudState(hudWindow, state)
-    },
-  })
+  // Start the Fn hotkey + recorder bridge. The recorder transport needs a
+  // real webContents, so this waits for the main renderer. During onboarding
+  // it runs when the user reaches Try-it-out (see onTryModeEnter) rather than
+  // at boot, so the OS prompts the helper triggers (Input Monitoring) appear
+  // on the screen that explains them.
+  let pipelineStart: Promise<void> | null = null
+  async function ensurePipeline(): Promise<void> {
+    if (running !== null) return
+    if (pipelineStart !== null) return pipelineStart
+    pipelineStart = (async () => {
+      const win = mainWindow
+      if (win === undefined || win.isDestroyed()) return
+      await new Promise<void>((resolve) => {
+        if (win.webContents.isLoading()) {
+          win.webContents.once("did-finish-load", () => resolve())
+        } else {
+          resolve()
+        }
+      })
+      running = await startPipeline({
+        services: { ...services, paster: tryModePaster },
+        window: win,
+        onStateChange: (state) => {
+          // Every renderer that shows pipeline state listens on this channel:
+          // the main window, and the onboarding window's Try-it-out step.
+          for (const win of BrowserWindow.getAllWindows()) {
+            if (win === hudWindow || win.isDestroyed()) continue
+            win.webContents.send(IPC_CHANNELS.state.change, state)
+          }
+          setHudState(hudWindow, state)
+        },
+      })
+    })().finally(() => {
+      pipelineStart = null
+    })
+    return pipelineStart
+  }
+
+  if (!isOnboarding) await ensurePipeline()
 
   // Menu-bar hint notification. Suppressed during onboarding because the
   // onboarding window already communicates the same information in-context
