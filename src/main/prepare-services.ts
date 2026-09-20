@@ -162,7 +162,7 @@ export async function prepareServices(
 
   // The transcriber routes through the SDK's filePath/ffmpeg decode path
   // (WAV encoder in the worker) — the raw-buffer base64 batch path returns
-  // empty text on the current SDK + whispercpp versions. The qvac-dictate POC
+  // empty text on the current SDK + whispercpp versions. The reference implementation
   // uses the same WAV/filePath pattern.
   const transcriber = coreWorker.transcriber()
 

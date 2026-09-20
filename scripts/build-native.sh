@@ -41,7 +41,7 @@ build_universal() {
   # the user's permission grant in System Settings never persists across
   # rebuilds, and the binary loses trust on every recompile. Explicitly
   # re-signing produces a stable adhoc signature (flags=0x2, not 0x20002)
-  # tied to the binary's hash, which is what the qvac-dictate POC ships.
+  # tied to the binary's hash.
   codesign --force --sign - "$out"
 }
 

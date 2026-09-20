@@ -15,14 +15,8 @@ export interface WebContentsLike {
  * Tightest slice of Electron's ipcMain we use.
  */
 export interface IpcMainLike {
-  once(
-    channel: string,
-    listener: (event: unknown, ...args: unknown[]) => void,
-  ): void
-  removeListener(
-    channel: string,
-    listener: (event: unknown, ...args: unknown[]) => void,
-  ): void
+  once(channel: string, listener: (event: unknown, ...args: unknown[]) => void): void
+  removeListener(channel: string, listener: (event: unknown, ...args: unknown[]) => void): void
 }
 
 export interface ElectronRecorderTransportOptions {
@@ -71,7 +65,5 @@ export class ElectronRecorderTransport implements RecorderTransport {
 function describePayload(payload: unknown): string {
   if (payload === null) return "null"
   if (payload === undefined) return "undefined"
-  return typeof payload === "object"
-    ? (payload?.constructor?.name ?? "object")
-    : typeof payload
+  return typeof payload === "object" ? (payload?.constructor?.name ?? "object") : typeof payload
 }

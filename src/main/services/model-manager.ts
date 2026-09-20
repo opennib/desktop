@@ -165,10 +165,7 @@ export class FsModelManager implements ModelManager {
     return false
   }
 
-  async download(
-    modelId: string,
-    onProgress?: (percent: number) => void,
-  ): Promise<void> {
+  async download(modelId: string, onProgress?: (percent: number) => void): Promise<void> {
     const resolved = this.resolve(modelId)
     const target = this.targetPath(resolved)
     const partial = `${target}.partial`

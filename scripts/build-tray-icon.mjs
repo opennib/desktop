@@ -26,7 +26,10 @@ const OUT_DIR = join(HERE, "..", "resources")
 
 function qBez(p0, p1, p2, t) {
   const u = 1 - t
-  return [u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0], u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1]]
+  return [
+    u * u * p0[0] + 2 * u * t * p1[0] + t * t * p2[0],
+    u * u * p0[1] + 2 * u * t * p1[1] + t * t * p2[1],
+  ]
 }
 
 function flattenQuadratic(p0, p1, p2, steps = 24) {
@@ -44,12 +47,27 @@ function flattenQuadratic(p0, p1, p2, steps = 24) {
 function nibOutlineSegments() {
   return [
     ...flattenQuadratic([5, 6], [5, 3], [8, 3]),
-    [[8, 3], [16, 3]],
+    [
+      [8, 3],
+      [16, 3],
+    ],
     ...flattenQuadratic([16, 3], [19, 3], [19, 6]),
-    [[19, 6], [19, 12]],
-    [[19, 12], [12, 21.5]],
-    [[12, 21.5], [5, 12]],
-    [[5, 12], [5, 6]],
+    [
+      [19, 6],
+      [19, 12],
+    ],
+    [
+      [19, 12],
+      [12, 21.5],
+    ],
+    [
+      [12, 21.5],
+      [5, 12],
+    ],
+    [
+      [5, 12],
+      [5, 6],
+    ],
   ]
 }
 
@@ -86,7 +104,10 @@ function coverageAt(vx, vy, outline) {
   }
 
   // Tine slit (stroked line from (12, 9.7) to (12, 17)).
-  const dSlit = distToSegment(vx, vy, [[12, 9.7], [12, 17]])
+  const dSlit = distToSegment(vx, vy, [
+    [12, 9.7],
+    [12, 17],
+  ])
   if (dSlit <= half) alpha = Math.max(alpha, 1)
   else if (dSlit < half + AA_FALLOFF) {
     alpha = Math.max(alpha, 1 - (dSlit - half) / AA_FALLOFF)

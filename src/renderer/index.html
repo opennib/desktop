@@ -146,21 +146,14 @@
           </button>
         </nav>
 
-        <div class="sidebar-footer">
-          Hold <kbd class="mono">fn</kbd> to dictate anywhere.
-        </div>
+        <div class="sidebar-footer">Hold <kbd class="mono">fn</kbd> to dictate anywhere.</div>
       </aside>
 
       <section class="content">
         <section id="readiness" class="readiness" hidden></section>
 
         <!-- ─── History ──────────────────────────────────────────── -->
-        <section
-          id="panel-history"
-          class="tab-panel"
-          role="tabpanel"
-          data-tab-panel="history"
-        >
+        <section id="panel-history" class="tab-panel" role="tabpanel" data-tab-panel="history">
           <header class="page-head">
             <h1 class="page-title">History</h1>
             <div class="page-actions">
@@ -271,19 +264,13 @@
           </div>
           <p id="dictionary-empty" class="dict-empty">No corrections yet.</p>
           <p class="dict-help">
-            Corrections run after transcription, before insertion. Capture the misheard form
-            in lowercase syllables (e.g. <span class="mono">co re ml</span> for CoreML).
+            Corrections run after transcription, before insertion. Capture the misheard form in
+            lowercase syllables (e.g. <span class="mono">co re ml</span> for CoreML).
           </p>
         </section>
 
         <!-- ─── Models ───────────────────────────────────────────── -->
-        <section
-          id="panel-models"
-          class="tab-panel"
-          role="tabpanel"
-          data-tab-panel="models"
-          hidden
-        >
+        <section id="panel-models" class="tab-panel" role="tabpanel" data-tab-panel="models" hidden>
           <header class="page-head">
             <h1 class="page-title">Models</h1>
           </header>
@@ -292,8 +279,8 @@
             <ul id="whisper-model-list" class="model-list"></ul>
           </div>
           <p class="dict-help">
-            Download a model, then press <span class="kbd-soft">Use</span> to make it active.
-            Only the active model runs during dictation.
+            Download a model, then press <span class="kbd-soft">Use</span> to make it active. Only
+            the active model runs during dictation.
           </p>
         </section>
 
@@ -355,8 +342,8 @@
           <div class="pref-section">
             <h3 class="pref-section-label mono">Privacy</h3>
             <p class="privacy-blurb">
-              Everything happens on this device. Audio, transcripts, and the dictionary never
-              leave your Mac.
+              Everything happens on this device. Audio, transcripts, and the dictionary never leave
+              your Mac.
               <span class="privacy-bold">No telemetry, no cloud, no servers.</span>
             </p>
           </div>
@@ -420,18 +407,35 @@
               <div class="pref-row-text">
                 <div class="pref-row-label">Mode</div>
                 <div class="pref-row-hint">
-                  Hold-to-dictate prevents accidental capture; tap modes are
-                  one-handed.
+                  Hold-to-dictate prevents accidental capture; tap modes are one-handed.
                 </div>
               </div>
               <div id="mode-picker" class="segmented" role="radiogroup" aria-label="Hotkey mode">
-                <button type="button" class="seg-btn is-active" data-mode="hold" role="radio" aria-checked="true">
+                <button
+                  type="button"
+                  class="seg-btn is-active"
+                  data-mode="hold"
+                  role="radio"
+                  aria-checked="true"
+                >
                   Hold key
                 </button>
-                <button type="button" class="seg-btn" data-mode="tap" role="radio" aria-checked="false">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  data-mode="tap"
+                  role="radio"
+                  aria-checked="false"
+                >
                   Tap to toggle
                 </button>
-                <button type="button" class="seg-btn" data-mode="tap-twice" role="radio" aria-checked="false">
+                <button
+                  type="button"
+                  class="seg-btn"
+                  data-mode="tap-twice"
+                  role="radio"
+                  aria-checked="false"
+                >
                   Tap twice
                 </button>
               </div>
@@ -504,14 +508,11 @@
       <div class="modal-card" role="dialog" aria-labelledby="hotkey-modal-title" aria-modal="true">
         <h2 id="hotkey-modal-title" class="modal-title">Push-to-talk key</h2>
         <p class="modal-sub">
-          Press the key you want to use. Hold this key anywhere on your Mac to
-          dictate.
+          Press the key you want to use. Hold this key anywhere on your Mac to dictate.
         </p>
 
         <div id="hotkey-capture" class="hotkey-capture" tabindex="0">
-          <div id="hotkey-capture-state" class="hotkey-capture-state">
-            Press a key…
-          </div>
+          <div id="hotkey-capture-state" class="hotkey-capture-state">Press a key…</div>
           <div id="hotkey-capture-key" class="hotkey-capture-key mono" hidden></div>
           <div id="hotkey-capture-hint" class="hotkey-capture-hint">
             Allowed: <span class="mono">F8</span>, <span class="mono">F9</span>,

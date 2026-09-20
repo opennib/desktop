@@ -182,7 +182,9 @@ export class CoreWorkerClient {
           ),
         )
       })
-      unwrap(await rpc.init({ historyDir: options.historyDir, dictionaryDir: options.dictionaryDir }))
+      unwrap(
+        await rpc.init({ historyDir: options.historyDir, dictionaryDir: options.dictionaryDir }),
+      )
       log.info("core worker started", {
         historyDir: options.historyDir,
         dictionaryDir: options.dictionaryDir,

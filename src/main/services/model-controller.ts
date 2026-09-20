@@ -54,9 +54,7 @@ export class ModelController {
 
   async list(): Promise<readonly ModelEntry[]> {
     const activeWhisperId = this.deps.settings.whisperModelId()
-    const activeLlmId = this.deps.settings.cleanupEnabled()
-      ? this.deps.settings.llmModelId()
-      : null
+    const activeLlmId = this.deps.settings.cleanupEnabled() ? this.deps.settings.llmModelId() : null
 
     const whisperEntries = await Promise.all(
       listWhisperModels().map(async (m): Promise<ModelEntry> => ({

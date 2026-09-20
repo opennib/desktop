@@ -3,11 +3,13 @@ import { describe, expect, it, vi } from "vitest"
 
 import { SystemPaster } from "../../../src/main/services/system-paster"
 
-function makePaster(overrides: {
-  writeText?: (t: string) => void
-  spawnPaste?: () => Promise<void>
-  clipboardSettleMs?: number
-} = {}) {
+function makePaster(
+  overrides: {
+    writeText?: (t: string) => void
+    spawnPaste?: () => Promise<void>
+    clipboardSettleMs?: number
+  } = {},
+) {
   const writeText = overrides.writeText ?? vi.fn()
   const spawnPaste = overrides.spawnPaste ?? vi.fn(async () => {})
   const clipboardSettleMs = overrides.clipboardSettleMs ?? 0

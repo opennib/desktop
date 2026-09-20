@@ -19,7 +19,7 @@ export function createPaster(): Paster {
       exec: async (path: string) => {
         // Direct spawn (no shell). Routing through `/bin/sh -c` adds a shell
         // ancestor that confuses macOS responsible-process attribution for
-        // Accessibility checks; the qvac-dictate POC uses execFile too.
+        // Accessibility checks.
         await new Promise<void>((resolve, reject) => {
           execFile(path, [], { timeout: 2000 }, (err, _stdout, stderr) => {
             if (err) {

@@ -10,12 +10,7 @@ export interface SystemPreferencesLike {
   isTrustedAccessibilityClient?(prompt: boolean): boolean
 }
 
-export type MediaAccessStatus =
-  | "not-determined"
-  | "granted"
-  | "denied"
-  | "restricted"
-  | "unknown"
+export type MediaAccessStatus = "not-determined" | "granted" | "denied" | "restricted" | "unknown"
 
 export interface ElectronPermissionsOptions {
   readonly platform: NodeJS.Platform

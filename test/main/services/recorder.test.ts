@@ -134,8 +134,6 @@ describe("IpcRecorder", () => {
     const rec = new IpcRecorder({ transport })
     await rec.start()
     const frame = await rec.stop()
-    expect(Array.from(frame.samples)).toEqual([
-      0.1, -0.2, 0.3, -0.4,
-    ].map((v) => Math.fround(v)))
+    expect(Array.from(frame.samples)).toEqual([0.1, -0.2, 0.3, -0.4].map((v) => Math.fround(v)))
   })
 })

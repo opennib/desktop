@@ -34,8 +34,8 @@
   --danger: #c14545;
 
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
-    Roboto, system-ui, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, system-ui, sans-serif;
   font-size: 14px;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -145,7 +145,9 @@ select {
   border-radius: 50%;
   background: var(--success);
   flex-shrink: 0;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .status-pill #indicator[data-state="recording"] {
@@ -355,7 +357,9 @@ select {
   font-size: 12.5px;
   color: var(--ink-3);
   border: 0.5px solid transparent;
-  transition: border-color 0.12s ease, background 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
 }
 
 .search-field:focus-within {
@@ -408,7 +412,10 @@ select {
   font-weight: 500;
   letter-spacing: -0.05px;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
 
 .btn:hover {
@@ -561,7 +568,10 @@ select {
   gap: 14px;
   align-items: flex-start;
   cursor: default;
-  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .history-row.is-selected {
@@ -739,7 +749,10 @@ select {
   justify-content: center;
   cursor: pointer;
   opacity: 0.4;
-  transition: opacity 0.12s ease, background 0.12s ease, color 0.12s ease;
+  transition:
+    opacity 0.12s ease,
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 .dict-row:hover .dict-row-delete button {
@@ -1196,7 +1209,9 @@ select {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
 }
 
 .seg-btn:hover:not(.is-active) {
@@ -1242,7 +1257,9 @@ select {
   background: var(--card);
   border-radius: 14px;
   padding: 24px 26px 18px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3), 0 0 0 0.5px var(--hair);
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px var(--hair);
   animation: modal-pop-in 0.18s ease;
   /* Lock the card to its tallest state so the capture/hint switch and
      preset highlight never resize (and visually re-center) the dialog. */
@@ -1305,7 +1322,10 @@ select {
      card while leaving siblings short — keeps all preset cards the same
      height so clicking between them never reflows the grid. */
   min-height: 78px;
-  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .hotkey-option:hover {
@@ -1361,7 +1381,9 @@ select {
   text-align: center;
   outline: none;
   cursor: text;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
   /* Hold a stable height so the modal card doesn't grow/shrink (and visually
      "jump") when the captured-key chip appears, or when the hint switches
      between one and two lines. */

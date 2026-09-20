@@ -11,8 +11,7 @@
   --warn: #ffb300;
   --white: #ffffff;
   --pill-bg: rgba(20, 18, 16, 0.94);
-  --pill-shadow: 0 12px 40px rgba(0, 0, 0, 0.4),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  --pill-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   --text-soft: rgba(255, 255, 255, 0.5);
   --text-muted: rgba(255, 255, 255, 0.75);
   --wave-color: #ffffff;
@@ -34,8 +33,7 @@ body {
   overflow: hidden;
   -webkit-user-select: none;
   user-select: none;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui,
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
   color: var(--white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -129,17 +127,27 @@ body {
 }
 
 /* state -> middle visibility */
-#pill[data-state="recording"] #waveform { display: flex; }
-#pill[data-state="recording"] #idle-text { display: none; }
+#pill[data-state="recording"] #waveform {
+  display: flex;
+}
+#pill[data-state="recording"] #idle-text {
+  display: none;
+}
 
 #pill[data-state="processing"] #waveform {
   display: flex;
   opacity: 0.35;
 }
-#pill[data-state="processing"] #idle-text { display: none; }
+#pill[data-state="processing"] #idle-text {
+  display: none;
+}
 
-#pill[data-state="idle"] #idle-text { display: block; }
-#pill[data-state="idle"] #waveform { display: none; }
+#pill[data-state="idle"] #idle-text {
+  display: block;
+}
+#pill[data-state="idle"] #waveform {
+  display: none;
+}
 
 /* ─── right slot (timer text / spinner) ───────────────────────────── */
 
@@ -151,13 +159,19 @@ body {
   justify-content: flex-end;
   color: var(--text-soft);
 }
-#pill[data-state="recording"] #status { color: var(--rec); }
-#pill[data-state="idle"] #status { visibility: hidden; }
+#pill[data-state="recording"] #status {
+  color: var(--rec);
+}
+#pill[data-state="idle"] #status {
+  visibility: hidden;
+}
 
 #status-text {
   display: inline;
 }
-#pill[data-state="processing"] #status-text { display: none; }
+#pill[data-state="processing"] #status-text {
+  display: none;
+}
 
 #spinner {
   display: none;
@@ -167,7 +181,9 @@ body {
   animation: spin 1.1s linear infinite;
   will-change: transform;
 }
-#pill[data-state="processing"] #spinner { display: block; }
+#pill[data-state="processing"] #spinner {
+  display: block;
+}
 
 #spinner > span {
   position: absolute;
@@ -179,14 +195,38 @@ body {
   background: var(--white);
 }
 /* 8-dot comet wheel: dots spaced 45deg, opacity ramps so the tail fades. */
-#spinner > span:nth-child(1) { opacity: 0.12; transform: translate(-50%, -50%) rotate(0deg)   translateY(-8px); }
-#spinner > span:nth-child(2) { opacity: 0.25; transform: translate(-50%, -50%) rotate(45deg)  translateY(-8px); }
-#spinner > span:nth-child(3) { opacity: 0.37; transform: translate(-50%, -50%) rotate(90deg)  translateY(-8px); }
-#spinner > span:nth-child(4) { opacity: 0.50; transform: translate(-50%, -50%) rotate(135deg) translateY(-8px); }
-#spinner > span:nth-child(5) { opacity: 0.62; transform: translate(-50%, -50%) rotate(180deg) translateY(-8px); }
-#spinner > span:nth-child(6) { opacity: 0.75; transform: translate(-50%, -50%) rotate(225deg) translateY(-8px); }
-#spinner > span:nth-child(7) { opacity: 0.87; transform: translate(-50%, -50%) rotate(270deg) translateY(-8px); }
-#spinner > span:nth-child(8) { opacity: 1.00; transform: translate(-50%, -50%) rotate(315deg) translateY(-8px); }
+#spinner > span:nth-child(1) {
+  opacity: 0.12;
+  transform: translate(-50%, -50%) rotate(0deg) translateY(-8px);
+}
+#spinner > span:nth-child(2) {
+  opacity: 0.25;
+  transform: translate(-50%, -50%) rotate(45deg) translateY(-8px);
+}
+#spinner > span:nth-child(3) {
+  opacity: 0.37;
+  transform: translate(-50%, -50%) rotate(90deg) translateY(-8px);
+}
+#spinner > span:nth-child(4) {
+  opacity: 0.5;
+  transform: translate(-50%, -50%) rotate(135deg) translateY(-8px);
+}
+#spinner > span:nth-child(5) {
+  opacity: 0.62;
+  transform: translate(-50%, -50%) rotate(180deg) translateY(-8px);
+}
+#spinner > span:nth-child(6) {
+  opacity: 0.75;
+  transform: translate(-50%, -50%) rotate(225deg) translateY(-8px);
+}
+#spinner > span:nth-child(7) {
+  opacity: 0.87;
+  transform: translate(-50%, -50%) rotate(270deg) translateY(-8px);
+}
+#spinner > span:nth-child(8) {
+  opacity: 1;
+  transform: translate(-50%, -50%) rotate(315deg) translateY(-8px);
+}
 
 @keyframes recPulse {
   0% {

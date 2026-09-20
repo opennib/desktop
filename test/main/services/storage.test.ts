@@ -10,17 +10,13 @@ describe("ElectronStorage", () => {
         return "/Users/example/Library/Application Support/opennib"
       },
     })
-    expect(storage.baseDirectory()).toBe(
-      "/Users/example/Library/Application Support/opennib",
-    )
+    expect(storage.baseDirectory()).toBe("/Users/example/Library/Application Support/opennib")
   })
 
   it("normalizes Windows backslashes to forward slashes", () => {
     const storage = new ElectronStorage({
       getPath: () => "C:\\Users\\example\\AppData\\Roaming\\opennib",
     })
-    expect(storage.baseDirectory()).toBe(
-      "C:/Users/example/AppData/Roaming/opennib",
-    )
+    expect(storage.baseDirectory()).toBe("C:/Users/example/AppData/Roaming/opennib")
   })
 })

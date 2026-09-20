@@ -6,7 +6,9 @@ import {
   type SystemPreferencesLike,
 } from "../../../src/main/services/permissions"
 
-function macSystemPreferences(overrides: Partial<SystemPreferencesLike> = {}): SystemPreferencesLike {
+function macSystemPreferences(
+  overrides: Partial<SystemPreferencesLike> = {},
+): SystemPreferencesLike {
   return {
     getMediaAccessStatus: () => "granted" as MediaAccessStatus,
     askForMediaAccess: async () => true,

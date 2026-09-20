@@ -74,17 +74,17 @@ describe("GlobalKeyListenerHotkey", () => {
 
   it("rejects unsupported combos", async () => {
     const { hotkey } = setup()
-    await expect(
-      hotkey.register("Cmd+Shift+Space", { onPress, onRelease }),
-    ).rejects.toBeInstanceOf(HotkeyError)
+    await expect(hotkey.register("Cmd+Shift+Space", { onPress, onRelease })).rejects.toBeInstanceOf(
+      HotkeyError,
+    )
   })
 
   it("refuses double registration", async () => {
     const { hotkey } = setup()
     await hotkey.register("RightAlt", { onPress, onRelease })
-    await expect(
-      hotkey.register("ScrollLock", { onPress, onRelease }),
-    ).rejects.toBeInstanceOf(HotkeyError)
+    await expect(hotkey.register("ScrollLock", { onPress, onRelease })).rejects.toBeInstanceOf(
+      HotkeyError,
+    )
   })
 
   it("unregister kills the listener and clears state", async () => {
@@ -103,9 +103,7 @@ describe("GlobalKeyListenerHotkey", () => {
     const { hotkey } = setup()
     await hotkey.register("RightAlt", { onPress, onRelease })
     await hotkey.unregister("RightAlt")
-    await expect(
-      hotkey.register("RightAlt", { onPress, onRelease }),
-    ).resolves.toBeUndefined()
+    await expect(hotkey.register("RightAlt", { onPress, onRelease })).resolves.toBeUndefined()
   })
 
   it("wraps factory failures as HotkeyError", async () => {
