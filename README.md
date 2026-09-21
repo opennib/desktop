@@ -8,6 +8,8 @@
   <a href="./LICENSE"><img alt="MIT license" src="https://img.shields.io/badge/license-MIT-1f6feb?style=flat&labelColor=4b5563"></a>
 </p>
 
+**Website:** [opennib.com](https://opennib.com) · **Privacy policy:** [opennib.com/privacy](https://opennib.com/privacy)
+
 Free, open-source, **fully local** dictation for macOS, Windows, and Linux. Hold a key, speak, and the text lands in whatever app you were already typing in.
 
 - **Push-to-talk** — a global hotkey with real key-release detection (including the macOS Fn key), so recording stops the moment you let go.
