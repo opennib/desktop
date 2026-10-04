@@ -44,15 +44,21 @@ export function createPaster(): Paster {
     spawnPaste: () =>
       new Promise<void>((resolve, reject) => {
         const command = pasteCommand()
-        execFile(command.bin, command.args, { timeout: 2000 }, (err, _stdout, stderr) => {
-          if (err) {
-            const errOut = stderr?.toString().trim() ?? ""
-            if (errOut.length > 0) log.warn(`${command.bin} stderr`, { stderr: errOut })
-            reject(err)
-            return
-          }
-          resolve()
-        })
+        // `windowsHide` keeps the PowerShell window from flashing on every paste.
+        execFile(
+          command.bin,
+          command.args,
+          { timeout: 4000, windowsHide: true },
+          (err, _stdout, stderr) => {
+            if (err) {
+              const errOut = stderr?.toString().trim() ?? ""
+              if (errOut.length > 0) log.warn(`${command.bin} stderr`, { stderr: errOut })
+              reject(err)
+              return
+            }
+            resolve()
+          },
+        )
       }),
   })
 }
@@ -103,9 +109,12 @@ export function defaultHotkeyForPlatform(): string {
 function pasteCommand(): { bin: string; args: readonly string[] } {
   if (process.platform === "win32") {
     return {
-      bin: "powershell",
+      bin: "powershell.exe",
       args: [
         "-NoProfile",
+        "-NonInteractive",
+        "-WindowStyle",
+        "Hidden",
         "-Command",
         "Add-Type -AssemblyName System.Windows.Forms;[System.Windows.Forms.SendKeys]::SendWait('^v')",
       ],

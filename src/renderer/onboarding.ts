@@ -5,6 +5,7 @@ import type {
   PipelineState,
   SystemStatusSnapshot,
 } from "../shared/preload-api"
+import { IS_MAC, IS_WIN, probeMicrophone } from "./platform"
 
 declare global {
   interface Window {
@@ -15,7 +16,11 @@ declare global {
 type PermissionState = "granted" | "denied" | "undetermined"
 type StepName = "welcome" | "acc" | "mic" | "model" | "lang" | "try" | "done"
 
-const STEP_ORDER: readonly StepName[] = ["welcome", "acc", "mic", "model", "lang", "try", "done"]
+// Accessibility is a macOS concept; Windows and Linux paste without it, so
+// the step is dropped there and the pips, labels and navigation follow.
+const STEP_ORDER: readonly StepName[] = IS_MAC
+  ? ["welcome", "acc", "mic", "model", "lang", "try", "done"]
+  : ["welcome", "mic", "model", "lang", "try", "done"]
 
 /**
  * Curated language menu for the onboarding picker. We don't expose the full
@@ -119,8 +124,7 @@ const KEY_CODE_TO_COMBO: Readonly<Record<string, string>> = {
  * not offered there; Windows/Linux keep the plain-key set.
  */
 function platformHotkeyPresets(): readonly string[] {
-  const isMac = navigator.platform.toLowerCase().includes("mac")
-  return isMac
+  return IS_MAC
     ? ["Fn", "LeftCtrl", "RightAlt", "RightCmd"]
     : ["RightAlt", "LeftAlt", "RightCtrl", "ScrollLock", "F8", "F9"]
 }
@@ -141,6 +145,12 @@ interface State {
   currentHotkey: string
   /** True between "recording" and the transcript (or idle without one). */
   awaitingTranscript: boolean
+  /**
+   * Result of the renderer-side microphone probe on Windows/Linux, where the
+   * main process cannot ask. Overrides an "undetermined" snapshot.
+   */
+  micProbe: PermissionState | null
+  micProbeLabel: string | null
 }
 
 const state: State = {
@@ -158,6 +168,8 @@ const state: State = {
   pendingDownloadModelId: null,
   currentHotkey: "Fn",
   awaitingTranscript: false,
+  micProbe: null,
+  micProbeLabel: null,
 }
 
 // ─── DOM helpers ──────────────────────────────────────────────────────
@@ -207,6 +219,10 @@ function setStep(next: StepName): void {
     if (f !== null) f.hidden = s !== next
   }
   const idx = STEP_ORDER.indexOf(next)
+  const stepLabel = pane(next)?.querySelector<HTMLElement>(".ob-step-label")
+  if (stepLabel !== null && stepLabel !== undefined) {
+    stepLabel.textContent = `Step ${idx + 1} of ${STEP_ORDER.length}`
+  }
   $$(".ob-pip").forEach((dot, i) => {
     dot.classList.toggle("is-active", i === idx)
     dot.classList.toggle("is-done", i < idx)
@@ -269,12 +285,12 @@ function updateMicPane(snapshot: SystemStatusSnapshot): void {
   const nextBtn = $<HTMLButtonElement>("ob-mic-next")
   if (status === null || reqBtn === null || openBtn === null || nextBtn === null) return
 
-  const perm = snapshot.microphone
+  const perm = effectiveMicrophone(snapshot)
   const label =
     perm === "granted"
       ? "Microphone granted"
       : perm === "denied"
-        ? "Microphone denied"
+        ? (state.micProbeLabel ?? "Microphone denied")
         : "Not granted yet"
   setPillStatus(status, perm, label)
 
@@ -284,16 +300,45 @@ function updateMicPane(snapshot: SystemStatusSnapshot): void {
     nextBtn.hidden = false
   } else if (perm === "denied") {
     // The system prompt only fires the first time; once denied, the user
-    // must toggle it in System Settings. Continue stays available so they
-    // can finish onboarding and revisit later.
+    // must toggle it in system settings. Continue stays available so they
+    // can finish onboarding and revisit later. Linux has no settings pane
+    // to open, so only the Continue button is offered there.
     reqBtn.hidden = true
-    openBtn.hidden = false
+    openBtn.hidden = !(IS_MAC || IS_WIN)
     nextBtn.hidden = false
   } else {
     reqBtn.hidden = false
     openBtn.hidden = true
     nextBtn.hidden = true
   }
+}
+
+function effectiveMicrophone(snapshot: SystemStatusSnapshot): PermissionState {
+  if (snapshot.microphone === "granted") return "granted"
+  return state.micProbe ?? snapshot.microphone
+}
+
+async function requestMicrophone(): Promise<void> {
+  if (IS_MAC) {
+    const snap = await window.opennib.system.requestMicrophone()
+    updateMicPane(snap)
+    return
+  }
+  const result = await probeMicrophone()
+  state.micProbe = result.state
+  state.micProbeLabel = result.label
+  await refreshPermissionStatus()
+}
+
+/** Copy and chrome that differ off macOS: no Accessibility step, tray not menu bar. */
+function applyPlatformChrome(): void {
+  if (IS_MAC) return
+  document.querySelector<HTMLElement>(`.ob-pip[data-pip="${STEP_ORDER.length + 1}"]`)?.remove()
+  $("ob-pips")?.setAttribute("aria-valuemax", String(STEP_ORDER.length))
+  const home = $("ob-done-home")
+  if (home !== null) home.textContent = "system tray"
+  const micOpen = $("ob-mic-open")
+  if (micOpen !== null) micOpen.textContent = "Open Settings"
 }
 
 let pollTimer: number | null = null
@@ -497,7 +542,13 @@ async function handleLangNext(): Promise<void> {
 function renderTryHotkeyLabel(combo: string): void {
   state.currentHotkey = combo
   const label = HOTKEY_KEY_LABELS[combo] ?? combo
-  for (const id of ["ob-try-prompt-key", "ob-try-card-key", "ob-try-area-key"]) {
+  for (const id of [
+    "ob-try-prompt-key",
+    "ob-try-card-key",
+    "ob-try-area-key",
+    "ob-done-key",
+    "ob-done-quickref-key",
+  ]) {
     const el = $(id)
     if (el !== null) el.textContent = label
   }
@@ -672,6 +723,7 @@ async function init(): Promise<void> {
   attachModelProgress()
   renderModelList()
   renderLanguageGrid()
+  applyPlatformChrome()
 
   // Resume where a previous session left off (see setStep persistence).
   const saved = settings.onboardingStep
@@ -686,7 +738,7 @@ async function init(): Promise<void> {
     // process alive, which matches Wispr Flow's "menu-bar app" model.
     window.close()
   })
-  bind("ob-welcome-next", () => setStep("acc"))
+  bind("ob-welcome-next", () => setStep(IS_MAC ? "acc" : "mic"))
 
   // Step 2
   bind("ob-acc-skip", () => setStep("mic"))
@@ -697,9 +749,9 @@ async function init(): Promise<void> {
   bind("ob-acc-next", () => setStep("mic"))
 
   // Step 3
-  bind("ob-mic-back", () => setStep("acc"))
+  bind("ob-mic-back", () => setStep(IS_MAC ? "acc" : "welcome"))
   bind("ob-mic-request", () => {
-    void window.opennib.system.requestMicrophone().then((snap) => updateMicPane(snap))
+    void requestMicrophone()
   })
   bind("ob-mic-open", () => {
     void window.opennib.system.openSettings("microphone")

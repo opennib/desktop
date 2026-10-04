@@ -35,7 +35,9 @@ export class ElectronPermissions implements Permissions {
 
   async microphone(): Promise<PermissionState> {
     const get = this.systemPreferences.getMediaAccessStatus
-    if (this.platform !== "darwin" || get === undefined) {
+    // Electron reports media access on macOS and Windows; Linux has no
+    // OS-level microphone permission, so the renderer probes getUserMedia.
+    if ((this.platform !== "darwin" && this.platform !== "win32") || get === undefined) {
       return "undetermined"
     }
     return mapMediaStatus(get.call(this.systemPreferences, "microphone"))
@@ -75,4 +77,22 @@ function mapMediaStatus(status: MediaAccessStatus): PermissionState {
     default:
       return "undetermined"
   }
+}
+
+export type SettingsTarget = "accessibility" | "microphone" | "input-monitoring"
+
+export function settingsUrl(platform: NodeJS.Platform, target: SettingsTarget): string | null {
+  if (platform === "darwin") {
+    const pane =
+      target === "accessibility"
+        ? "Privacy_Accessibility"
+        : target === "input-monitoring"
+          ? "Privacy_ListenEvent"
+          : "Privacy_Microphone"
+    return `x-apple.systempreferences:com.apple.preference.security?${pane}`
+  }
+  if (platform === "win32" && target === "microphone") {
+    return "ms-settings:privacy-microphone"
+  }
+  return null
 }

@@ -3,7 +3,7 @@ import { ipcMain, shell } from "electron"
 import { IPC_CHANNELS } from "../ipc-channels"
 import type { KeyboardAccessStatus } from "../services/hotkey"
 import type { FsModelManager } from "../services/model-manager"
-import type { ElectronPermissions } from "../services/permissions"
+import { type ElectronPermissions, settingsUrl } from "../services/permissions"
 import type { JsonFileSettings } from "../services/settings"
 
 export interface ModelLoadError {
@@ -60,19 +60,14 @@ export function registerSystemIpc(deps: SystemIpcDeps): void {
     if (target !== "accessibility" && target !== "microphone" && target !== "input-monitoring") {
       throw new Error(`unsupported settings target: ${String(target)}`)
     }
-    // Deep-link directly to the relevant Privacy & Security pane. Without this
-    // the renderer's only option is `requestAccessibility()`, which on macOS
-    // only triggers the system prompt the FIRST time it's called — every
-    // subsequent click after a denied or dismissed prompt does nothing visible
-    // and the user is stuck.
-    const pane =
-      target === "accessibility"
-        ? "Privacy_Accessibility"
-        : target === "input-monitoring"
-          ? "Privacy_ListenEvent"
-          : "Privacy_Microphone"
-    const url = `x-apple.systempreferences:com.apple.preference.security?${pane}`
-    await shell.openExternal(url)
+    // Deep-link directly to the relevant settings pane. Without this the
+    // renderer's only option is `requestAccessibility()`, which on macOS only
+    // triggers the system prompt the FIRST time it's called — every subsequent
+    // click after a denied or dismissed prompt does nothing visible and the
+    // user is stuck. Platforms without a matching pane resolve silently; the
+    // renderer hides those buttons.
+    const url = settingsUrl(process.platform, target)
+    if (url !== null) await shell.openExternal(url)
   })
 }
 

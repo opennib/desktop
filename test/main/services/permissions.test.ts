@@ -4,6 +4,7 @@ import {
   ElectronPermissions,
   type MediaAccessStatus,
   type SystemPreferencesLike,
+  settingsUrl,
 } from "../../../src/main/services/permissions"
 
 function macSystemPreferences(
@@ -101,5 +102,50 @@ describe("ElectronPermissions on non-darwin", () => {
   it("requestMicrophone falls back to microphone() when ask is unavailable", async () => {
     const p = new ElectronPermissions({ platform: "win32", systemPreferences: {} })
     expect(await p.requestMicrophone()).toBe("undetermined")
+  })
+})
+
+describe("ElectronPermissions on Windows", () => {
+  it("reads microphone status from Electron, which supports it on win32", async () => {
+    const p = new ElectronPermissions({
+      platform: "win32",
+      systemPreferences: { getMediaAccessStatus: () => "denied" as MediaAccessStatus },
+    })
+    expect(await p.microphone()).toBe("denied")
+    expect(p.accessibility).toBeUndefined()
+  })
+
+  it("requestMicrophone has no native prompt and falls back to the current status", async () => {
+    const p = new ElectronPermissions({
+      platform: "win32",
+      systemPreferences: { getMediaAccessStatus: () => "granted" as MediaAccessStatus },
+    })
+    expect(await p.requestMicrophone()).toBe("granted")
+  })
+
+  it("reports undetermined on Linux, where there is no OS-level permission", async () => {
+    const p = new ElectronPermissions({
+      platform: "linux",
+      systemPreferences: { getMediaAccessStatus: () => "denied" as MediaAccessStatus },
+    })
+    expect(await p.microphone()).toBe("undetermined")
+  })
+})
+
+describe("settingsUrl", () => {
+  it("deep-links every pane on macOS", () => {
+    expect(settingsUrl("darwin", "microphone")).toContain("Privacy_Microphone")
+    expect(settingsUrl("darwin", "accessibility")).toContain("Privacy_Accessibility")
+    expect(settingsUrl("darwin", "input-monitoring")).toContain("Privacy_ListenEvent")
+  })
+
+  it("opens only the microphone privacy page on Windows", () => {
+    expect(settingsUrl("win32", "microphone")).toBe("ms-settings:privacy-microphone")
+    expect(settingsUrl("win32", "accessibility")).toBeNull()
+    expect(settingsUrl("win32", "input-monitoring")).toBeNull()
+  })
+
+  it("has nothing to open on Linux", () => {
+    expect(settingsUrl("linux", "microphone")).toBeNull()
   })
 })

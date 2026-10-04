@@ -12,6 +12,7 @@ import type {
 } from "../shared/preload-api"
 
 import { installRecorder } from "./recorder"
+import { IS_MAC, IS_WIN, probeMicrophone } from "./platform"
 
 declare global {
   interface Window {
@@ -491,6 +492,17 @@ const X_SVG = `<svg viewBox="0 0 14 14" width="13" height="13" fill="none">
   <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
 </svg>`
 
+/**
+ * macOS has a native prompt the main process can call. Windows and Linux do
+ * not: opening the microphone once from this renderer is the request, and the
+ * refreshed snapshot reflects the OS's answer.
+ */
+async function requestMicrophoneAccess(): Promise<SystemStatusSnapshot> {
+  if (IS_MAC) return window.opennib.system.requestMicrophone()
+  await probeMicrophone()
+  return window.opennib.system.status()
+}
+
 function renderPermissions(snap: SystemStatusSnapshot): void {
   if (permissionsList === null) return
   const rows: {
@@ -561,7 +573,7 @@ function renderPermissions(snap: SystemStatusSnapshot): void {
       btn.textContent = row.cta === "request" ? "Grant" : "Open Settings"
       btn.addEventListener("click", () => {
         if (row.cta === "request") {
-          void window.opennib.system.requestMicrophone().then(renderPermissions)
+          void requestMicrophoneAccess().then(renderPermissions)
         } else {
           void window.opennib.system.openSettings(row.key)
         }
@@ -627,14 +639,16 @@ function renderReadiness(snapshot: SystemStatusSnapshot): void {
       key: "mic",
       message:
         snapshot.microphone === "denied"
-          ? "Microphone access was denied. Enable it in System Settings → Privacy & Security → Microphone."
+          ? IS_WIN
+            ? "Microphone access was denied. In Windows Settings → Privacy & security → Microphone, turn on microphone access and allow desktop apps."
+            : "Microphone access was denied. Enable it in System Settings → Privacy & Security → Microphone."
           : "Microphone access is required to record dictation.",
       ...(snapshot.microphone === "undetermined"
         ? {
             cta: {
               label: "Grant access",
               action: () => {
-                void window.opennib.system.requestMicrophone().then(renderReadiness)
+                void requestMicrophoneAccess().then(renderReadiness)
               },
             },
           }
@@ -1316,6 +1330,10 @@ function maybeShowFirstRunHint(snap: SettingsSnapshot): void {
   if (snap.firstRunHintShown) return
   if (firstRunKeyLabel !== null) {
     firstRunKeyLabel.textContent = HOTKEY_KEY_LABELS[snap.hotkey] ?? snap.hotkey
+  }
+  const sidebarKey = document.getElementById("sidebar-key-label")
+  if (sidebarKey !== null) {
+    sidebarKey.textContent = HOTKEY_KEY_LABELS[snap.hotkey] ?? snap.hotkey
   }
   firstRunHint.hidden = false
 }

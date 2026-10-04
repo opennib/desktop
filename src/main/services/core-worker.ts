@@ -100,7 +100,15 @@ export class CoreWorkerClient {
     // bytes on macOS). `socketDir` is often a long `/var/folders/…/T` path, so
     // keep the filename short — a full UUID here overruns the cap and the
     // worker's `net.connect` fails with EINVAL ("invalid argument").
-    const socketPath = join(options.socketDir, `onib-${randomUUID().slice(0, 8)}.sock`)
+    // POSIX: a unix socket in the temp dir (short name — macOS caps sun_path
+    // at ~104 bytes and the temp dir is long). Windows has no unix sockets;
+    // Node and Bare both speak named pipes under the \\.\pipe\ namespace,
+    // which is flat and needs no directory.
+    const id = randomUUID().slice(0, 8)
+    const socketPath =
+      process.platform === "win32"
+        ? `\\\\.\\pipe\\onib-${id}`
+        : join(options.socketDir, `onib-${id}.sock`)
     this.socketPath = socketPath
 
     // Bind the socket BEFORE spawning the worker: the worker's bare-net
@@ -142,6 +150,8 @@ export class CoreWorkerClient {
     const child = spawn("bare", {
       args: [options.workerPath, socketPath],
       stdio: ["ignore", "inherit", "inherit"],
+      // Without this, Windows opens a console window for the worker.
+      windowsHide: true,
     })
     this.child = child
 
@@ -359,7 +369,8 @@ export class CoreWorkerClient {
       this.server = null
     }
     this.rpc = null
-    if (this.socketPath !== null) {
+    // Unix sockets leave a file behind; Windows named pipes vanish with the server.
+    if (this.socketPath !== null && process.platform !== "win32") {
       try {
         await rm(this.socketPath, { force: true })
       } catch (err) {
@@ -367,7 +378,7 @@ export class CoreWorkerClient {
         // dir is harmless (each start uses a fresh unique name).
         log.warn("core worker socket cleanup failed", { error: errorMessage(err) })
       }
-      this.socketPath = null
     }
+    this.socketPath = null
   }
 }
