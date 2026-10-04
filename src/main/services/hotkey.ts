@@ -39,22 +39,48 @@ export interface MacFnHotkeyOptions {
  */
 export const MAC_HELPER_COMBOS: readonly string[] = ["Fn", "LeftCtrl", "RightAlt", "RightCmd"]
 
+/** Combos the Windows PowerShell watcher polls. See native/win-key-monitor.ps1. */
+export const WIN_HELPER_COMBOS: readonly string[] = [
+  "LeftCtrl",
+  "RightCtrl",
+  "LeftAlt",
+  "RightAlt",
+  "ScrollLock",
+  "F8",
+  "F9",
+]
+
+export interface HelperCommand {
+  readonly path: string
+  readonly args: readonly string[]
+}
+
+export interface HelperHotkeyOptions {
+  /** Helper name for log lines, e.g. "fn-key-monitor". */
+  readonly name: string
+  readonly allowedCombos: readonly string[]
+  readonly command: (combo: string) => HelperCommand
+  readonly spawn: SpawnLike
+  readonly onKeyboardAccess?: (state: KeyboardAccessState) => void
+}
+
 /**
- * macOS push-to-talk via the Swift key helper. Fn is not exposed to JS-level
- * libraries at all, and the other presets are modifiers, so the helper watches
- * the chosen key with NSEvent's `addGlobalMonitorForEvents` and prints
- * "DOWN" / "UP" to stdout. We parse those lines and dispatch to the handlers.
+ * Push-to-talk via a helper process that watches one key and prints "DOWN" /
+ * "UP" lines to stdout ("READY" once live, "WAITING_PERMISSION" while the OS
+ * withholds keyboard access). The macOS Swift helper and the Windows
+ * PowerShell watcher both speak this protocol.
  */
-export class MacFnHotkey implements Hotkey {
+export class HelperHotkey implements Hotkey {
   private process: ChildProcessLike | null = null
   private registeredCombo: string | null = null
 
-  constructor(private readonly options: MacFnHotkeyOptions) {}
+  constructor(private readonly options: HelperHotkeyOptions) {}
 
   async register(combo: string, handlers: HotkeyHandlers): Promise<void> {
-    if (!MAC_HELPER_COMBOS.includes(combo)) {
+    const { name, allowedCombos } = this.options
+    if (!allowedCombos.includes(combo)) {
       throw new HotkeyError(
-        `unsupported combo for the macOS key helper: ${combo} (allowed: ${MAC_HELPER_COMBOS.join(", ")})`,
+        `unsupported combo for ${name}: ${combo} (allowed: ${allowedCombos.join(", ")})`,
       )
     }
     if (this.process !== null) {
@@ -63,9 +89,10 @@ export class MacFnHotkey implements Hotkey {
 
     let child: ChildProcessLike
     try {
-      child = this.options.spawn(this.options.binaryPath, [combo])
+      const { path, args } = this.options.command(combo)
+      child = this.options.spawn(path, args)
     } catch (cause) {
-      throw new HotkeyError("failed to spawn fn-key-monitor", cause)
+      throw new HotkeyError(`failed to spawn ${name}`, cause)
     }
     this.process = child
     this.registeredCombo = combo
@@ -80,29 +107,29 @@ export class MacFnHotkey implements Hotkey {
         if (line === "DOWN") handlers.onPress()
         else if (line === "UP") handlers.onRelease()
         else if (line === "READY") {
-          log.info("fn-key-monitor ready")
+          log.info(`${name} ready`)
           this.options.onKeyboardAccess?.("granted")
         } else if (line === "WAITING_PERMISSION") {
-          log.warn("fn-key-monitor waiting for Input Monitoring permission")
+          log.warn(`${name} waiting for Input Monitoring permission`)
           this.options.onKeyboardAccess?.("waiting")
         }
       }
     })
 
     child.stderr?.on("data", (chunk: Buffer) => {
-      log.warn("fn-key-monitor stderr", { line: chunk.toString("utf8").trim() })
+      log.warn(`${name} stderr`, { line: chunk.toString("utf8").trim() })
     })
 
     child.on("exit", (code) => {
       if (code !== 0 && code !== null) {
-        log.error("fn-key-monitor exited unexpectedly", { code })
+        log.error(`${name} exited unexpectedly`, { code })
       }
       this.process = null
       this.registeredCombo = null
     })
 
     child.on("error", (err) => {
-      log.error("fn-key-monitor errored", { error: err.message })
+      log.error(`${name} errored`, { error: err.message })
     })
   }
 
@@ -115,5 +142,65 @@ export class MacFnHotkey implements Hotkey {
       this.process = null
     }
     this.registeredCombo = null
+  }
+}
+
+/**
+ * macOS push-to-talk via the Swift key helper. Fn is not exposed to JS-level
+ * libraries at all, and the other presets are modifiers, so the helper watches
+ * the chosen key with NSEvent's `addGlobalMonitorForEvents`.
+ */
+export class MacFnHotkey extends HelperHotkey {
+  constructor(options: MacFnHotkeyOptions) {
+    super({
+      name: "fn-key-monitor",
+      allowedCombos: MAC_HELPER_COMBOS,
+      command: (combo) => ({ path: options.binaryPath, args: [combo] }),
+      spawn: options.spawn,
+      ...(options.onKeyboardAccess !== undefined
+        ? { onKeyboardAccess: options.onKeyboardAccess }
+        : {}),
+    })
+  }
+}
+
+export interface WindowsKeyHotkeyOptions {
+  /** Path to native/win-key-monitor.ps1. */
+  readonly scriptPath: string
+  readonly spawn: SpawnLike
+  /** Our own pid; the watcher exits when this process is gone. */
+  readonly parentPid: number
+}
+
+/**
+ * Windows push-to-talk via a PowerShell script that polls GetAsyncKeyState for
+ * the one chosen key. A low-level keyboard hook is the textbook keylogger
+ * shape, and Windows Defender quarantines unsigned hook helpers (it removed
+ * node-global-key-listener's WinKeyServer.exe as Trojan:Win32/KeyLogger on a
+ * stock machine). Polling a single key is hook-free and ships as readable text.
+ */
+export class WindowsKeyHotkey extends HelperHotkey {
+  constructor(options: WindowsKeyHotkeyOptions) {
+    super({
+      name: "win-key-monitor",
+      allowedCombos: WIN_HELPER_COMBOS,
+      command: (combo) => ({
+        path: "powershell.exe",
+        args: [
+          "-NoLogo",
+          "-NoProfile",
+          "-NonInteractive",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-WindowStyle",
+          "Hidden",
+          "-File",
+          options.scriptPath,
+          combo,
+          String(options.parentPid),
+        ],
+      }),
+      spawn: options.spawn,
+    })
   }
 }

@@ -10,7 +10,8 @@ export interface KeyEventLike {
 }
 
 export interface KeyboardListenerLike {
-  addListener(cb: (event: KeyEventLike) => void): void
+  /** node-global-key-listener returns a promise that rejects if its helper fails to spawn. */
+  addListener(cb: (event: KeyEventLike) => void): void | Promise<void>
   kill(): void
 }
 
@@ -68,18 +69,24 @@ export class GlobalKeyListenerHotkey implements Hotkey {
     this.listener = listener
     this.registeredCombo = combo
 
-    listener.addListener((event) => {
-      if (event.name === undefined || !keyNames.includes(event.name)) return
-      try {
-        if (event.state === "DOWN") handlers.onPress()
-        else if (event.state === "UP") handlers.onRelease()
-      } catch (err) {
-        // Handler errors must not kill the listener thread.
-        log.error("hotkey handler threw", {
-          error: err instanceof Error ? err.message : String(err),
-        })
-      }
-    })
+    try {
+      await listener.addListener((event) => {
+        if (event.name === undefined || !keyNames.includes(event.name)) return
+        try {
+          if (event.state === "DOWN") handlers.onPress()
+          else if (event.state === "UP") handlers.onRelease()
+        } catch (err) {
+          // Handler errors must not kill the listener thread.
+          log.error("hotkey handler threw", {
+            error: err instanceof Error ? err.message : String(err),
+          })
+        }
+      })
+    } catch (cause) {
+      this.listener = null
+      this.registeredCombo = null
+      throw new HotkeyError("global key listener helper failed to start", cause)
+    }
   }
 
   async unregister(combo: string): Promise<void> {

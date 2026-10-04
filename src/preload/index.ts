@@ -26,8 +26,10 @@ import type {
  * (compiled as a separate TypeScript project) can consume it without
  * duplicating declarations.
  */
+declare const __APP_VERSION__: string
+
 const api: OpennibPreloadApi = {
-  version: "0.0.0",
+  version: __APP_VERSION__,
   recorder: {
     onStart(handler: () => void): () => void {
       const wrapped = (_event: IpcRendererEvent) => handler()

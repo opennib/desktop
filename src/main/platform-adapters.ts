@@ -7,7 +7,14 @@ import { log, type Hotkey, type Paster } from "@opennib/core"
 import { GlobalKeyboardListener } from "node-global-key-listener"
 
 import { GlobalKeyListenerHotkey } from "./services/global-key-hotkey"
-import { MAC_HELPER_COMBOS, MacFnHotkey, type KeyboardAccessState } from "./services/hotkey"
+import {
+  MAC_HELPER_COMBOS,
+  MacFnHotkey,
+  WIN_HELPER_COMBOS,
+  WindowsKeyHotkey,
+  type KeyboardAccessState,
+  type SpawnLike,
+} from "./services/hotkey"
 import { MacPaster } from "./services/paster"
 import { SystemPaster } from "./services/system-paster"
 
@@ -89,6 +96,17 @@ export function createHotkey(combo: string, options: CreateHotkeyOptions = {}): 
       ...(options.onKeyboardAccess !== undefined
         ? { onKeyboardAccess: options.onKeyboardAccess }
         : {}),
+    })
+  }
+  if (process.platform === "win32" && WIN_HELPER_COMBOS.includes(combo)) {
+    // No console window for the watcher; see WindowsKeyHotkey for why this is
+    // a script rather than node-global-key-listener's hook binary.
+    const spawnHidden: SpawnLike = (path, args) =>
+      spawn(path, [...(args ?? [])], { windowsHide: true })
+    return new WindowsKeyHotkey({
+      scriptPath: nativeBinaryPath("OPENNIB_WIN_KEY_MONITOR_PATH", "win-key-monitor.ps1"),
+      spawn: spawnHidden,
+      parentPid: process.pid,
     })
   }
   return new GlobalKeyListenerHotkey({

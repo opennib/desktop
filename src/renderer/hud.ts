@@ -9,6 +9,8 @@
 // the access site instead.
 type PipelineState = "idle" | "recording" | "processing"
 
+import { hotkeyLabel } from "./platform"
+
 interface HudPreloadShape {
   readonly state: {
     onChange(handler: (state: PipelineState) => void): () => void
@@ -16,9 +18,14 @@ interface HudPreloadShape {
   readonly audio: {
     onLevel(handler: (bins: readonly number[]) => void): () => void
   }
+  readonly settings: {
+    get(): Promise<{ readonly hotkey: string }>
+    onChange(handler: (snapshot: { readonly hotkey: string }) => void): () => void
+  }
 }
 
 const pill = document.getElementById("pill")
+const idleText = document.getElementById("idle-text")
 const statusText = document.getElementById("status-text")
 const waveformEl = document.getElementById("waveform")
 const bars =
@@ -99,5 +106,13 @@ api.audio.onLevel((bins) => {
 })
 
 flattenBars()
+
+// The idle pill names the configured push-to-talk key (fn on macOS, Right Alt
+// on Windows by default) and follows changes made in Settings.
+function renderIdleHint(combo: string): void {
+  if (idleText !== null) idleText.textContent = `Hold ${hotkeyLabel(combo)} to dictate`
+}
+void api.settings.get().then((snapshot) => renderIdleHint(snapshot.hotkey))
+api.settings.onChange((snapshot) => renderIdleHint(snapshot.hotkey))
 
 export {}

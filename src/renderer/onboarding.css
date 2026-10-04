@@ -1327,6 +1327,10 @@
 }
 
 /* Keyboard-access callout (try + done steps) */
+.ob-keyaccess[hidden] {
+  display: none;
+}
+
 .ob-keyaccess {
   display: flex;
   align-items: center;

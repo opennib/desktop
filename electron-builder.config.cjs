@@ -189,7 +189,13 @@ module.exports = {
   // per arch).
   mac: {
     category: "public.app-category.utilities",
-    files: ["!node_modules/**/prebuilds/linux-*", "!node_modules/**/prebuilds/win32-*"],
+    files: [
+      "!node_modules/**/prebuilds/linux-*",
+      "!node_modules/**/prebuilds/win32-*",
+      // The Swift helper watches the key on macOS; the hook binaries are unused
+      // here and Defender flags them in any zip a Windows user opens.
+      "!node_modules/node-global-key-listener/bin/**",
+    ],
     // No explicit `arch`: build the host's arch. An x64 build on an arm64
     // host would ship without `bare-runtime-darwin-x64` (npm installs only the
     // host's optional runtime package) — build each arch on its own runner.
@@ -216,8 +222,15 @@ module.exports = {
   },
   win: {
     target: ["nsis"],
-    files: ["!node_modules/**/prebuilds/darwin-*", "!node_modules/**/prebuilds/linux-*"],
+    files: [
+      "!node_modules/**/prebuilds/darwin-*",
+      "!node_modules/**/prebuilds/linux-*",
+      // Windows Defender quarantines WinKeyServer.exe (Trojan:Win32/KeyLogger
+      // heuristic); the PowerShell watcher below replaces it.
+      "!node_modules/node-global-key-listener/bin/**",
+    ],
     extraResources: [
+      { from: "native/win-key-monitor.ps1", to: "native/win-key-monitor.ps1" },
       {
         from: "node_modules/bare-runtime-win32-${arch}",
         to: "app/node_modules/bare-runtime-win32-${arch}",

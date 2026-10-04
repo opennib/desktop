@@ -32,3 +32,30 @@ export async function probeMicrophone(): Promise<MicProbeResult> {
     return { state: "denied", label: "Microphone blocked by the system" }
   }
 }
+
+const MAC_KEY_LABELS: Readonly<Record<string, string>> = {
+  Fn: "fn",
+  LeftCtrl: "Left ⌃",
+  RightAlt: "Right ⌥",
+  LeftAlt: "Left ⌥",
+  RightCtrl: "Right ⌃",
+  RightCmd: "Right ⌘",
+  ScrollLock: "ScrLk",
+  F8: "F8",
+  F9: "F9",
+}
+
+const PC_KEY_LABELS: Readonly<Record<string, string>> = {
+  LeftCtrl: "Left Ctrl",
+  RightAlt: "Right Alt",
+  LeftAlt: "Left Alt",
+  RightCtrl: "Right Ctrl",
+  ScrollLock: "Scroll Lock",
+  F8: "F8",
+  F9: "F9",
+}
+
+/** Human label for a hotkey combo id: Apple glyphs on macOS, key names elsewhere. */
+export function hotkeyLabel(combo: string): string {
+  return (IS_MAC ? MAC_KEY_LABELS : PC_KEY_LABELS)[combo] ?? combo
+}

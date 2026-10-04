@@ -5,7 +5,7 @@ import type {
   PipelineState,
   SystemStatusSnapshot,
 } from "../shared/preload-api"
-import { IS_MAC, IS_WIN, probeMicrophone } from "./platform"
+import { IS_MAC, IS_WIN, hotkeyLabel, probeMicrophone } from "./platform"
 
 declare global {
   interface Window {
@@ -94,18 +94,6 @@ const FALLBACK_META: ModelMeta = { quality: 3, speed: 3, desc: "" }
 // Display labels for the supported push-to-talk combos. Mirror of the table
 // in main.ts so the onboarding bundle doesn't have to import from the main
 // settings panel.
-const HOTKEY_KEY_LABELS: Readonly<Record<string, string>> = {
-  Fn: "fn",
-  LeftCtrl: "Left ⌃",
-  RightAlt: "Right ⌥",
-  LeftAlt: "Left ⌥",
-  RightCtrl: "Right ⌃",
-  RightCmd: "Right ⌘",
-  ScrollLock: "ScrLk",
-  F8: "F8",
-  F9: "F9",
-}
-
 const KEY_CODE_TO_COMBO: Readonly<Record<string, string>> = {
   ControlLeft: "LeftCtrl",
   AltRight: "RightAlt",
@@ -332,6 +320,11 @@ async function requestMicrophone(): Promise<void> {
 
 /** Copy and chrome that differ off macOS: no Accessibility step, tray not menu bar. */
 function applyPlatformChrome(): void {
+  const versionLabel = $("ob-welcome-version")
+  if (versionLabel !== null) {
+    const os = IS_MAC ? "MAC" : IS_WIN ? "WINDOWS" : "LINUX"
+    versionLabel.textContent = `FOR ${os} · ${window.opennib.version}`
+  }
   if (IS_MAC) return
   document.querySelector<HTMLElement>(`.ob-pip[data-pip="${STEP_ORDER.length + 1}"]`)?.remove()
   $("ob-pips")?.setAttribute("aria-valuemax", String(STEP_ORDER.length))
@@ -339,6 +332,11 @@ function applyPlatformChrome(): void {
   if (home !== null) home.textContent = "system tray"
   const micOpen = $("ob-mic-open")
   if (micOpen !== null) micOpen.textContent = "Open Settings"
+  // The global shortcuts are Alt+Shift+H/V everywhere; only the glyphs are Apple's.
+  const historyKey = $("ob-quickref-history-key")
+  if (historyKey !== null) historyKey.textContent = "Alt Shift H"
+  const insertKey = $("ob-quickref-insert-key")
+  if (insertKey !== null) insertKey.textContent = "Alt Shift V"
 }
 
 let pollTimer: number | null = null
@@ -541,7 +539,7 @@ async function handleLangNext(): Promise<void> {
 
 function renderTryHotkeyLabel(combo: string): void {
   state.currentHotkey = combo
-  const label = HOTKEY_KEY_LABELS[combo] ?? combo
+  const label = hotkeyLabel(combo)
   for (const id of [
     "ob-try-prompt-key",
     "ob-try-card-key",
@@ -576,7 +574,7 @@ function openTryPicker(): void {
       const btn = document.createElement("button")
       btn.type = "button"
       btn.className = `ob-trypicker-preset${combo === state.currentHotkey ? " is-current" : ""}`
-      btn.textContent = HOTKEY_KEY_LABELS[combo] ?? combo
+      btn.textContent = hotkeyLabel(combo)
       btn.dataset["combo"] = combo
       btn.addEventListener("click", () => {
         void window.opennib.settings.setHotkey(combo).then(() => {

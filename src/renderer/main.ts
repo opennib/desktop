@@ -12,7 +12,7 @@ import type {
 } from "../shared/preload-api"
 
 import { installRecorder } from "./recorder"
-import { IS_MAC, IS_WIN, probeMicrophone } from "./platform"
+import { IS_MAC, IS_WIN, hotkeyLabel, probeMicrophone } from "./platform"
 
 declare global {
   interface Window {
@@ -269,18 +269,6 @@ const HOTKEY_LABELS: Readonly<Record<string, string>> = {
   F9: "Hold F9",
 }
 
-const HOTKEY_KEY_LABELS: Readonly<Record<string, string>> = {
-  Fn: "fn",
-  LeftCtrl: "Left ⌃",
-  RightAlt: "Right ⌥",
-  LeftAlt: "Left ⌥",
-  RightCtrl: "Right ⌃",
-  RightCmd: "Right ⌘",
-  ScrollLock: "ScrLk",
-  F8: "F8",
-  F9: "F9",
-}
-
 const HOTKEY_OPTION_DESCRIPTIONS: Readonly<Record<string, string>> = {
   Fn: "Apple default. Doesn't collide with app shortcuts.",
   LeftCtrl: "Left of the keyboard. Rarely held while typing.",
@@ -309,8 +297,14 @@ function platformHotkeyChoices(): readonly string[] {
 }
 
 function renderHotkey(combo: string): void {
+  // The sidebar hint mirrors the active key everywhere, not only on first run.
+  const sidebarKey = document.getElementById("sidebar-key-label")
+  if (sidebarKey !== null) sidebarKey.textContent = hotkeyLabel(combo)
   if (hotkeyDisplay === null) return
-  hotkeyDisplay.textContent = HOTKEY_LABELS[combo] ?? `Hold ${combo}`
+  // Spelled-out names on macOS; Windows/Linux use the PC key names ("Right Alt").
+  hotkeyDisplay.textContent = IS_MAC
+    ? (HOTKEY_LABELS[combo] ?? `Hold ${combo}`)
+    : `Hold ${hotkeyLabel(combo)}`
 }
 
 // Map DOM `KeyboardEvent.code` values to our supported combo strings. Anything
@@ -358,7 +352,7 @@ function renderHotkeyModal(currentCombo: string): void {
       btn.className = `hotkey-option${selected ? " is-selected" : ""}`
       btn.dataset["combo"] = combo
       btn.innerHTML = `
-        <span class="hotkey-option-key mono">${HOTKEY_KEY_LABELS[combo] ?? combo}</span>
+        <span class="hotkey-option-key mono">${hotkeyLabel(combo)}</span>
         <span class="hotkey-option-label">${HOTKEY_OPTION_DESCRIPTIONS[combo] ?? ""}</span>
       `
       btn.addEventListener("click", () => {
@@ -376,11 +370,11 @@ function setPendingCombo(combo: string, fromPress: boolean): void {
   }
   if (hotkeyCaptureKey !== null) {
     hotkeyCaptureKey.hidden = false
-    hotkeyCaptureKey.textContent = HOTKEY_KEY_LABELS[combo] ?? combo
+    hotkeyCaptureKey.textContent = hotkeyLabel(combo)
   }
   if (hotkeyCaptureHint !== null) {
     hotkeyCaptureHint.classList.remove("is-error")
-    hotkeyCaptureHint.innerHTML = `Press Save to use <span class="mono">${HOTKEY_KEY_LABELS[combo] ?? combo}</span> as your push-to-talk key.`
+    hotkeyCaptureHint.innerHTML = `Press Save to use <span class="mono">${hotkeyLabel(combo)}</span> as your push-to-talk key.`
   }
   // Highlight matching preset row.
   if (hotkeyModalOptions !== null) {
@@ -501,6 +495,13 @@ async function requestMicrophoneAccess(): Promise<SystemStatusSnapshot> {
   if (IS_MAC) return window.opennib.system.requestMicrophone()
   await probeMicrophone()
   return window.opennib.system.status()
+}
+
+// Keyboard accelerator hints use Apple glyphs; Windows and Linux spell them out.
+if (!IS_MAC) {
+  document.querySelectorAll<HTMLElement>(".search-accel").forEach((el) => {
+    el.textContent = "Ctrl F"
+  })
 }
 
 function renderPermissions(snap: SystemStatusSnapshot): void {
@@ -1329,11 +1330,11 @@ function maybeShowFirstRunHint(snap: SettingsSnapshot): void {
   if (!snap.onboardingCompleted) return
   if (snap.firstRunHintShown) return
   if (firstRunKeyLabel !== null) {
-    firstRunKeyLabel.textContent = HOTKEY_KEY_LABELS[snap.hotkey] ?? snap.hotkey
+    firstRunKeyLabel.textContent = hotkeyLabel(snap.hotkey)
   }
   const sidebarKey = document.getElementById("sidebar-key-label")
   if (sidebarKey !== null) {
-    sidebarKey.textContent = HOTKEY_KEY_LABELS[snap.hotkey] ?? snap.hotkey
+    sidebarKey.textContent = hotkeyLabel(snap.hotkey)
   }
   firstRunHint.hidden = false
 }

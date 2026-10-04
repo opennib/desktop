@@ -1,4 +1,13 @@
-import { BrowserWindow, Notification, Tray, app, dialog, globalShortcut, ipcMain } from "electron"
+import {
+  BrowserWindow,
+  Menu,
+  Notification,
+  Tray,
+  app,
+  dialog,
+  globalShortcut,
+  ipcMain,
+} from "electron"
 
 import { log, type Paster } from "@opennib/core"
 
@@ -87,6 +96,10 @@ const teardownOnce = makeTeardownOnce(
 )
 
 void app.whenReady().then(async () => {
+  // Windows and Linux reveal Electron's default File/Edit/View bar on a bare
+  // Alt press even with autoHideMenuBar, which is exactly the key our default
+  // push-to-talk uses. Drop the menu there; macOS keeps it for Cmd shortcuts.
+  if (process.platform !== "darwin") Menu.setApplicationMenu(null)
   log.info("opennib desktop main process ready")
 
   // Build services and register IPC handlers BEFORE the renderer can call

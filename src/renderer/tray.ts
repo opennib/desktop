@@ -6,6 +6,7 @@
 import { SUPPORTED_LANGUAGES } from "@opennib/core"
 
 import type { OpennibPreloadApi, PipelineState, SettingsSnapshot } from "../shared/preload-api"
+import { IS_MAC, hotkeyLabel } from "./platform"
 
 declare global {
   interface Window {
@@ -180,6 +181,18 @@ function applySettings(snapshot: SettingsSnapshot): void {
   renderStatus()
   renderToggle()
   renderQuickValues()
+  renderHotkeyHint(snapshot.hotkey)
+}
+
+/** The hint pill shows the configured key; the ⌘ accelerators only exist on macOS. */
+function renderHotkeyHint(combo: string): void {
+  const key = document.querySelector<HTMLElement>(".hint-key")
+  if (key !== null) key.textContent = hotkeyLabel(combo)
+  if (!IS_MAC) {
+    document.querySelectorAll<HTMLElement>(".menu-accel").forEach((el) => {
+      el.hidden = true
+    })
+  }
 }
 
 async function loadMicDevices(): Promise<void> {

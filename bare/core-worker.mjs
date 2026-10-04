@@ -95,10 +95,20 @@ function wrapAsWavFloat32(samples, sampleRate) {
 }
 
 // bare-path isn't imported (path is not on core's allow list, but this is
-// worker glue, not core). A trivial POSIX join keeps the worker dependency
-// surface minimal — unix sockets + temp dirs are always POSIX here.
-function join(...parts) {
-  return parts.join("/").replace(/\/+/g, "/")
+// worker glue, not core). A trivial join keeps the worker dependency surface
+// minimal. Windows needs the native separator: bare-fs opens files through the
+// extended-length `\\?\` form, which does not treat "/" as a separator, so a
+// mixed "C:\...\Temp/frame.wav" fails with ENOENT.
+// The first segment is kept verbatim because `mkdtemp` already returns the
+// `\\?\C:\...` form on Windows; collapsing its leading backslashes would make
+// bare-fs prefix it a second time.
+const SEP = Bare.platform === "win32" ? "\\" : "/"
+function join(head, ...rest) {
+  const segments = [
+    head.replace(/[\\/]+$/, ""),
+    ...rest.map((part) => part.replace(/^[\\/]+|[\\/]+$/g, "")),
+  ]
+  return segments.join(SEP)
 }
 
 /**

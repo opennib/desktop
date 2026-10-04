@@ -28,8 +28,13 @@ import { errorMessage } from "../error-message"
 /** Raised when the worker fails to boot, exits unexpectedly, or a request times out. */
 export class CoreWorkerError extends OpennibError {}
 
-/** How long we wait for the worker to connect + acknowledge INIT before giving up. */
-const START_TIMEOUT_MS = 15_000
+/**
+ * How long we wait for the worker to connect + acknowledge INIT before giving
+ * up. Generous because a first launch on Windows pays for Defender scanning
+ * every fresh native binary, and on Windows-on-ARM for x64 emulation warm-up;
+ * both were measured past 15 s on a clean machine.
+ */
+const START_TIMEOUT_MS = 60_000
 /** How long we wait for the SHUTDOWN reply before killing the child anyway. */
 const SHUTDOWN_TIMEOUT_MS = 1_500
 

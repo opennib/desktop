@@ -1,5 +1,10 @@
+import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { defineConfig, externalizeDepsPlugin } from "electron-vite"
+
+const { version } = JSON.parse(readFileSync(resolve(__dirname, "package.json"), "utf8")) as {
+  version: string
+}
 
 // `externalizeDepsPlugin` leaves every dependency declared in package.json out
 // of the bundle, so `@opennib/core` and `@qvac/sdk` are loaded from
@@ -17,6 +22,9 @@ export default defineConfig({
   },
   preload: {
     plugins: [externalizeDepsPlugin()],
+    // The renderer shows the app version (welcome screen, About); the preload
+    // is the only bridge, and `package.json` is not readable from there.
+    define: { __APP_VERSION__: JSON.stringify(version) },
     build: {
       outDir: "out/preload",
       lib: { entry: "src/preload/index.ts", formats: ["cjs"] },

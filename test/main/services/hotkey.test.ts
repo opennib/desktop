@@ -3,7 +3,11 @@ import { EventEmitter } from "node:events"
 import { HotkeyError } from "@opennib/core"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { MacFnHotkey, type ChildProcessLike } from "../../../src/main/services/hotkey"
+import {
+  MacFnHotkey,
+  WindowsKeyHotkey,
+  type ChildProcessLike,
+} from "../../../src/main/services/hotkey"
 
 class FakeChild extends EventEmitter implements ChildProcessLike {
   readonly stdout = new EventEmitter() as unknown as ChildProcessLike["stdout"]
@@ -166,5 +170,40 @@ describe("MacFnHotkey", () => {
     child.emitExit(1)
     // After exit, register again should succeed without an "already registered" error.
     await expect(hotkey.register("Fn", { onPress, onRelease })).resolves.toBeUndefined()
+  })
+})
+
+describe("WindowsKeyHotkey", () => {
+  it("runs the PowerShell watcher hidden with the combo and parent pid", async () => {
+    const child = new FakeChild()
+    const spawn = vi.fn(() => child)
+    const hotkey = new WindowsKeyHotkey({
+      scriptPath: "C:\\app\\win-key-monitor.ps1",
+      spawn,
+      parentPid: 4242,
+    })
+    const onPress = vi.fn()
+    const onRelease = vi.fn()
+    await hotkey.register("RightAlt", { onPress, onRelease })
+    expect(spawn).toHaveBeenCalledTimes(1)
+    const [path, args] = spawn.mock.calls[0] as unknown as [string, string[]]
+    expect(path).toBe("powershell.exe")
+    expect(args).toContain("-NonInteractive")
+    expect(args.slice(-3)).toEqual(["C:\\app\\win-key-monitor.ps1", "RightAlt", "4242"])
+    child.emitStdout("READY\nDOWN\n")
+    child.emitStdout("UP\n")
+    expect(onPress).toHaveBeenCalledTimes(1)
+    expect(onRelease).toHaveBeenCalledTimes(1)
+  })
+
+  it("rejects combos the watcher does not poll", async () => {
+    const hotkey = new WindowsKeyHotkey({
+      scriptPath: "x.ps1",
+      spawn: vi.fn(() => new FakeChild()),
+      parentPid: 1,
+    })
+    await expect(hotkey.register("Fn", { onPress: vi.fn(), onRelease: vi.fn() })).rejects.toThrow(
+      /unsupported combo/,
+    )
   })
 })

@@ -44,9 +44,11 @@ export async function startPipeline(
     }
   }
 
-  const accState = await services.permissions.accessibility?.()
-  if (accState !== "granted") {
-    log.info("accessibility permission required for paste-helper", { current: accState })
+  if (services.permissions.accessibility !== undefined) {
+    const accState = await services.permissions.accessibility()
+    if (accState !== "granted") {
+      log.info("accessibility permission required for paste-helper", { current: accState })
+    }
   }
 
   const transport = new ElectronRecorderTransport({
