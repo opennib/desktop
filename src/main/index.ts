@@ -207,6 +207,8 @@ void app.whenReady().then(async () => {
 
   tray = createTray({
     onTrayClick: toggleTrayPopover,
+    onOpen: () => showMainTab(),
+    onSettings: () => showMainTab("general"),
     onQuit: () => {
       isQuitting = true
       app.quit()

@@ -238,29 +238,44 @@ export function createTrayWindow(): BrowserWindow {
 export function positionTrayWindow(win: BrowserWindow, tray: Tray): void {
   const trayBounds = tray.getBounds()
   const winBounds = win.getBounds()
-  // Center the popover horizontally under the icon, with a small vertical gap.
-  const x = Math.round(trayBounds.x + trayBounds.width / 2 - winBounds.width / 2)
-  const y = Math.round(trayBounds.y + trayBounds.height + 4)
-  win.setPosition(x, y, false)
+  const area = screen.getDisplayNearestPoint({ x: trayBounds.x, y: trayBounds.y }).workArea
+  const gap = 4
+  // Center the popover horizontally on the icon. macOS puts the tray at the
+  // top, so the popover hangs below it; the Windows and Linux taskbars sit at
+  // the bottom, so it opens above. Either way keep it inside the work area.
+  const below = trayBounds.y + trayBounds.height + gap
+  const fitsBelow = below + winBounds.height <= area.y + area.height
+  const y = fitsBelow ? below : trayBounds.y - winBounds.height - gap
+  const centered = trayBounds.x + trayBounds.width / 2 - winBounds.width / 2
+  const x = Math.min(Math.max(centered, area.x), area.x + area.width - winBounds.width)
+  win.setPosition(Math.round(x), Math.round(Math.max(y, area.y)), false)
 }
 
 export interface CreateTrayOptions {
   readonly onTrayClick: () => void
+  /** Show the main window (right-click menu, Windows/Linux). */
+  readonly onOpen: () => void
+  /** Show the main window on its settings page (right-click menu, Windows/Linux). */
+  readonly onSettings: () => void
   readonly onQuit: () => void
 }
 
 export function createTray(options: CreateTrayOptions): Tray {
   // macOS template images (`*Template.png`) auto-adapt to light/dark menu
-  // bars. The icon ships under `resources/` next to the app's native bins.
-  const icon = nativeImage.createFromPath(assetPath("tray-iconTemplate.png"))
+  // bars. Windows and Linux get the ink tile instead: a black template glyph
+  // vanishes on a dark taskbar. Both ship under `resources/`.
+  const iconName = process.platform === "darwin" ? "tray-iconTemplate.png" : "tray-icon.png"
+  const icon = nativeImage.createFromPath(assetPath(iconName))
   const t = new Tray(icon)
-  t.setToolTip("opennib — Hold Fn to dictate")
-  // Right-click keeps a native fallback for Quit when the custom popover
-  // can't render (e.g. devtools-related glitches in dev).
+  t.setToolTip("opennib — hold your dictation key to speak")
+  // Right-click is the conventional way into a tray app on Windows and Linux,
+  // so it offers the full set; on macOS it stays a fallback for Quit when the
+  // custom popover can't render (e.g. devtools-related glitches in dev).
   t.on("right-click", () => {
     t.popUpContextMenu(
       Menu.buildFromTemplate([
-        { label: "opennib", enabled: false },
+        { label: "Open opennib", click: options.onOpen },
+        { label: "Settings…", click: options.onSettings },
         { type: "separator" },
         { label: "Quit opennib", click: options.onQuit },
       ]),
